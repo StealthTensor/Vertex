@@ -1,0 +1,30 @@
+import React from 'react';
+
+interface SkullIconProps {
+  size?: number;
+  className?: string;
+}
+
+export const SkullIcon: React.FC<SkullIconProps> = ({ size = 24, className = '' }) => {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+    >
+      <path
+        d="M12 2C7.58172 2 4 5.58172 4 10V13C4 13.5523 4.44772 14 5 14H6V16C6 17.1046 6.89543 18 8 18H9V20C9 21.1046 9.89543 22 11 22H13C14.1046 22 15 21.1046 15 20V18H16C17.1046 18 18 17.1046 18 16V14H19C19.5523 14 20 13.5523 20 13V10C20 5.58172 16.4183 2 12 2Z"
+        fill="currentColor"
+      />
+      <circle cx="9" cy="9" r="1.5" fill="#000000" />
+      <circle cx="15" cy="9" r="1.5" fill="#000000" />
+      <path
+        d="M12 12C11.4477 12 11 12.4477 11 13V15C11 15.5523 11.4477 16 12 16C12.5523 16 13 15.5523 13 15V13C13 12.4477 12.5523 12 12 12Z"
+        fill="#000000"
+      />
+    </svg>
+  );
+};

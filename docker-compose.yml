@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  goscraper:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: goscraper_prod
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      # --- APP CONFIG ---
+      - PORT=8080
+      # This list tells the Backend which websites are allowed to connect (CORS)
+      - URL=http://localhost:3000,http://localhost:0243,https://class-pro.vercel.app,http://localhost:8080
+
+      # --- KEYS & SECRETS (From your .env) ---
+      - VALIDATION_KEY=@Ethical_Hacker1
+      - ENCRYPTION_KEY=@Ethical_Hacker2
+
+      # --- DATABASE (Supabase) ---
+      - SUPABASE_URL=https://eoekvgygfchaqnfpvljd.supabase.co
+      - SUPABASE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVvZWt2Z3lnZmNoYXFuZnB2bGpkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzEzODEsImV4cCI6MjA3ODUwNzM4MX0.B2gElP_bcS7kCuhrdi3HgG7Q15XyRpsWjwTSO3MIm18

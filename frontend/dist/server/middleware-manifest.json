@@ -1,0 +1,36 @@
+{
+  "version": 3,
+  "middleware": {},
+  "functions": {
+    "/auth/login/page": {
+      "files": [
+        "server/server-reference-manifest.js",
+        "server/app/auth/login/page_client-reference-manifest.js",
+        "server/middleware-build-manifest.js",
+        "server/middleware-react-loadable-manifest.js",
+        "server/next-font-manifest.js",
+        "server/interception-route-rewrite-manifest.js",
+        "server/edge-runtime-webpack.js",
+        "server/app/auth/login/page.js"
+      ],
+      "name": "app/auth/login/page",
+      "page": "/auth/login/page",
+      "matchers": [
+        {
+          "regexp": "^/auth/login$",
+          "originalSource": "/auth/login"
+        }
+      ],
+      "wasm": [],
+      "assets": [],
+      "env": {
+        "__NEXT_BUILD_ID": "development",
+        "NEXT_SERVER_ACTIONS_ENCRYPTION_KEY": "mDnv2hRj009LTpqLwpuRlt7vT0lhA3ed4vKaIXzbOPQ=",
+        "__NEXT_PREVIEW_MODE_ID": "ae63bfa7ebc858ef3e03524581272932",
+        "__NEXT_PREVIEW_MODE_SIGNING_KEY": "63ac6ad7e5ce5bd2b0c35c2c1d3e54aad6d644824d661f0467e03a66c0490a10",
+        "__NEXT_PREVIEW_MODE_ENCRYPTION_KEY": "e7017158794a26a1d8bcab810087123c24bd995590ad7917ab31745fb39ff7ca"
+      }
+    }
+  },
+  "sortedMiddleware": []
+}
