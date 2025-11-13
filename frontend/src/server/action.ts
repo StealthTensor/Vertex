@@ -94,7 +94,7 @@ async function getAllCourses(): Promise<CourseLite[]> {
 }
 
 // ------------------------------------------------------------------
-// ✅ FIXED: Login now saves the cookie!
+// ✅ FIXED: Login now fetches USER info and saves BOTH cookies
 // ------------------------------------------------------------------
 export async function serverLogin(params: {
   account: string;
@@ -102,40 +102,65 @@ export async function serverLogin(params: {
   cdigest?: string;
   captcha?: string;
 }) {
+  // 1. Call Login API
   const res: any = await api.login(params);
-  
-  // 🔍 DEBUGGING: Print what the backend actually sent us
+
+  // Debugging
   console.log("🔐 DEBUG LOGIN RESPONSE:", JSON.stringify(res, null, 2));
 
-  // Check ALL possible places the token might be hiding
+  // 2. Find the Token
   const token = res?.token || res?.data?.token || res?.body?.token;
 
   if (token) {
-    console.log("✅ Saving Token to Cookie:", token.substring(0, 10) + "...");
-    
-    (await cookies()).set("token", token, {
-      secure: true,            // Required for Vercel
-      httpOnly: true,          // Security
-      path: "/",               // Valid for whole site
+    const cookieStore = await cookies();
+    const cookieOptions: any = {
+      secure: true,
+      httpOnly: true,
+      path: "/",
       maxAge: 60 * 60 * 24 * 30, // 30 Days
-      sameSite: "lax",         
-    });
-  } else {
-    console.error("❌ Login successful but NO TOKEN found in response!");
+      sameSite: "lax",
+    };
+
+    // A. Save Token Cookie
+    cookieStore.set("token", token, cookieOptions);
+    console.log("✅ Saved 'token' cookie");
+
+    // B. Fetch User Info using the new token
+    try {
+      const userRes: any = await api.user(token);
+      
+      // Normalize user data structure
+      const userData = {
+        name: userRes?.name ?? userRes?.Name ?? "",
+        regNumber: userRes?.regNumber ?? userRes?.RegNumber ?? params.account,
+        program: userRes?.program ?? userRes?.Program ?? "",
+        // Add other fields if your middleware expects them
+      };
+
+      // C. Save User Cookie (Middleware requires this!)
+      cookieStore.set("user", JSON.stringify(userData), cookieOptions);
+      console.log("✅ Saved 'user' cookie");
+
+    } catch (err) {
+      console.error("⚠️ Failed to fetch user info after login:", err);
+      // Fallback: Create a basic user cookie so middleware doesn't block us
+      cookieStore.set("user", JSON.stringify({ regNumber: params.account }), cookieOptions);
+    }
   }
 
   return { res };
 }
 
 // ------------------------------------------------------------------
-// ✅ FIXED: Logout now deletes the cookie!
+// ✅ FIXED: Logout now deletes BOTH cookies
 // ------------------------------------------------------------------
 export async function getLogout() {
   const cookieStore = await cookies();
   const token = cookieStore.get("token")?.value;
 
-  // Delete the cookie locally
+  // Delete cookies locally
   cookieStore.delete("token");
+  cookieStore.delete("user"); // <--- Delete user cookie too
 
   if (!token) return { res: { success: true } };
 
@@ -147,7 +172,6 @@ export async function getLogout() {
       const res = await api.logout(token);
       return { res };
   } catch(e) {
-      // Ignore backend errors during logout, just ensure frontend is clear
       return { res: { success: true } };
   }
 }
