@@ -103,16 +103,25 @@ export async function serverLogin(params: {
   captcha?: string;
 }) {
   const res: any = await api.login(params);
+  
+  // 🔍 DEBUGGING: Print what the backend actually sent us
+  console.log("🔐 DEBUG LOGIN RESPONSE:", JSON.stringify(res, null, 2));
 
-  // If we got a token, SAVE IT to the browser cookies
-  if (res?.token) {
-    (await cookies()).set("token", res.token, {
-      secure: true,            // Required for Vercel (HTTPS)
-      httpOnly: true,          // Javascript can't steal it
+  // Check ALL possible places the token might be hiding
+  const token = res?.token || res?.data?.token || res?.body?.token;
+
+  if (token) {
+    console.log("✅ Saving Token to Cookie:", token.substring(0, 10) + "...");
+    
+    (await cookies()).set("token", token, {
+      secure: true,            // Required for Vercel
+      httpOnly: true,          // Security
       path: "/",               // Valid for whole site
       maxAge: 60 * 60 * 24 * 30, // 30 Days
-      sameSite: "lax",         // Good for normal navigation
+      sameSite: "lax",         
     });
+  } else {
+    console.error("❌ Login successful but NO TOKEN found in response!");
   }
 
   return { res };
