@@ -34,19 +34,18 @@ type CourseLite = {
 };
 
 // Helper function to get the token value
-function getToken() {
-  const token = cookies().get("token")?.value;
+async function getToken() {
+  const cookieStore = await cookies();
+  const token = cookieStore.get("token")?.value;
   if (!token) {
-    // Not using redirect here as it would be caught by react-query
-    // Instead, we'll let the API call fail with a 401, which is more appropriate
     throw new Error("Missing authentication token");
   }
   return token;
 }
 
 async function getAllCourses(): Promise<CourseLite[]> {
-  const token = getToken();
-  if (isDevToken(token)) return mockCourses; // Dev mode check
+  const token = await getToken();
+  if (isDevToken(token)) return mockCourses;
 
   try {
     const res: any = await api.courses(token);
@@ -94,6 +93,9 @@ async function getAllCourses(): Promise<CourseLite[]> {
   }
 }
 
+// ------------------------------------------------------------------
+// ✅ FIXED: Login now saves the cookie!
+// ------------------------------------------------------------------
 export async function serverLogin(params: {
   account: string;
   password: string;
@@ -101,22 +103,48 @@ export async function serverLogin(params: {
   captcha?: string;
 }) {
   const res: any = await api.login(params);
+
+  // If we got a token, SAVE IT to the browser cookies
+  if (res?.token) {
+    (await cookies()).set("token", res.token, {
+      secure: true,            // Required for Vercel (HTTPS)
+      httpOnly: true,          // Javascript can't steal it
+      path: "/",               // Valid for whole site
+      maxAge: 60 * 60 * 24 * 30, // 30 Days
+      sameSite: "lax",         // Good for normal navigation
+    });
+  }
+
   return { res };
 }
 
+// ------------------------------------------------------------------
+// ✅ FIXED: Logout now deletes the cookie!
+// ------------------------------------------------------------------
 export async function getLogout() {
-  const token = cookies().get("token")?.value;
+  const cookieStore = await cookies();
+  const token = cookieStore.get("token")?.value;
+
+  // Delete the cookie locally
+  cookieStore.delete("token");
+
   if (!token) return { res: { success: true } };
 
   if (isDevToken(token)) {
     return { res: { success: true } };
   }
-  const res = await api.logout(token);
-  return { res };
+  
+  try {
+      const res = await api.logout(token);
+      return { res };
+  } catch(e) {
+      // Ignore backend errors during logout, just ensure frontend is clear
+      return { res: { success: true } };
+  }
 }
 
 export async function timetable() {
-  const token = getToken();
+  const token = await getToken();
   if (isDevToken(token)) {
     return {
       data: {
@@ -182,7 +210,7 @@ export async function timetable() {
 }
 
 export async function attendance() {
-  const token = getToken();
+  const token = await getToken();
   if (isDevToken(token)) {
     return {
       data: {
@@ -289,7 +317,7 @@ export async function attendance() {
 }
 
 export async function marks() {
-  const token = getToken();
+  const token = await getToken();
   if (isDevToken(token)) {
     return {
       data: {
@@ -378,7 +406,7 @@ export async function marks() {
 }
 
 export async function Calendar() {
-  const token = getToken();
+  const token = await getToken();
   if (isDevToken(token)) {
     return {
       data: {
@@ -429,7 +457,7 @@ export async function Calendar() {
 }
 
 export async function Course() {
-  const token = getToken();
+  const token = await getToken();
   if (isDevToken(token)) {
     return {
       data: {
@@ -467,7 +495,7 @@ export async function Course() {
 }
 
 export async function userInfo() {
-  const token = getToken();
+  const token = await getToken();
   if (isDevToken(token)) {
     return {
       data: {
@@ -497,7 +525,7 @@ export async function userInfo() {
 }
 
 export async function dayOrder() {
-  const token = getToken();
+  const token = await getToken();
   if (isDevToken(token)) {
     return {
       data: {
