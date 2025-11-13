@@ -1,7 +1,7 @@
 {
-  "name": "AcademiaX",
-  "short_name": "AcademiaX",
-  "description": "Discover a sleek and modern way to manage your academics - no clutter, just clarity.",
+  "name": "Vertex",
+  "short_name": "Vertex",
+  "description": "Vertex: Study in the dark.",
   "id": "/app/timetable",
   "start_url": "/app/timetable",
   "theme_color": "#16171b",
