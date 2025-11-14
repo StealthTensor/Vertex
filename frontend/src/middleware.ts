@@ -33,6 +33,7 @@ export function middleware(request: NextRequest) {
 
   return NextResponse.next();
 }
+console.log("👮‍♂️ Middleware check:", { path: request.nextUrl.pathname, token: !!token, user: !!user });
 
 
 export const config = {
