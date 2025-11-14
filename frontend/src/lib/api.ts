@@ -73,6 +73,7 @@ export const api = {
     return data as Json;
   },
   
+  
   logout: (token: string) => request<Json>("/logout", { method: "DELETE", token }),
   attendance: (token: string) => request<Json>("/attendance", { token }),
   marks: (token: string) => request<Json>("/marks", { token }),
@@ -81,4 +82,4 @@ export const api = {
   user: (token: string) => request<Json>("/user", { token }),
   calendar: (token: string) => request<Json>("/calendar", { token }),
   get: (token: string) => request<Json>("/get", { token }),
-};
+};console.log("🔍 DEBUG API Request:", { path, token: token ? `${token.substring(0,20)}...` : "NO TOKEN", method });
