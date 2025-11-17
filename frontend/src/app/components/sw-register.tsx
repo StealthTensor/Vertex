@@ -101,7 +101,7 @@ export default function SwRegister() {
           }
 
           // Allow SW to ask client to clear caches (rare)
-          if (data.type === "CLEAR_CACHES") {
+          if (data.type === SW_CLEAR_CACHES) {
             try {
               caches.keys().then((keys) => Promise.all(keys.map((k) => caches.delete(k))));
             } catch {
@@ -115,9 +115,9 @@ export default function SwRegister() {
         if ("serviceWorker" in navigator) {
           navigator.serviceWorker.addEventListener("controllerchange", onControllerChange);
         }
-      } catch (err) {
+      } catch (_err) {
         // Registration failed; ignore silently — site still works without SW
-        // console.warn("SW registration failed", err);
+        // console.warn("SW registration failed", _err);
       }
     }
 

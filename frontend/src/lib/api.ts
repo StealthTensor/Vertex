@@ -99,21 +99,20 @@ async function request<T = Json>(path: string, opts: RequestOptions = {}): Promi
 
   const data = await parseResponse(res);
 
-    if (!res.ok && !allowErrorStatuses.includes(res.status)) {
+  if (!res.ok && !allowErrorStatuses.includes(res.status)) {
     let message = `HTTP ${res.status}`;
     if (typeof data === "string") {
       message = data;
     } else if (data && typeof data === "object") {
-      
-      if ("__html" in data && typeof (data as any).__html === "string") {
-        
+      // type-safe checks (avoid 'any')
+      const obj = data as Record<string, unknown>;
+      if ("__html" in obj && typeof obj["__html"] === "string") {
         try {
-          
-          console.warn("Server returned HTML error page for", url || normalizeApiPath(path), (data as any).__html);
+          console.warn("Server returned HTML error page for", url || normalizeApiPath(path), obj["__html"]);
         } catch {}
         message = "Server error (received HTML). Please check your input or try again.";
-      } else if ("error" in data && typeof (data as any).error === "string") {
-        message = (data as any).error;
+      } else if ("error" in obj && typeof obj["error"] === "string") {
+        message = obj["error"] as string;
       } else {
         try {
           message = JSON.stringify(data);
@@ -146,7 +145,6 @@ async function parseResponse(res: Response): Promise<unknown> {
     return text;
   }
 }
-
 
 export const api = {
   login: (params: { account: string; password: string; cdigest?: string; captcha?: string }) =>

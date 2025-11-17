@@ -57,11 +57,11 @@ const DayChange = ({ data }: { data: DaySchedule[] }) => {
   } = useDayOrder();
 
   const totalDays = data.length;
-  const getSafeIndex = (index: number) => {
+  const getSafeIndex = React.useCallback((index: number) => {
     if (totalDays === 0) return 0;
     const normalized = ((index % totalDays) + totalDays) % totalDays;
     return normalized;
-  };
+  }, [totalDays]);
 
   React.useEffect(() => {
     if (dayOrderData) {
