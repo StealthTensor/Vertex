@@ -215,7 +215,22 @@ func (lf *LoginFetcher) FetchCaptcha(cdigest string, jar cookieJar) (string, err
 }
 
 func (lf *LoginFetcher) Login(username, password string, cdigest, captcha *string) (*LoginResponse, error) {
-	user := strings.Replace(username, "@srmist.edu.in", "", 1)
+	user := strings.TrimSpace(username)
+	if idx := strings.Index(user, "@"); idx != -1 {
+		user = user[:idx]
+	}
+	if user == "" {
+		return &LoginResponse{
+			Authenticated: false,
+			Session:       nil,
+			Lookup:        nil,
+			Cookies:       "",
+			Status:        400,
+			Message:       "invalid account identifier",
+			Errors:        []string{"Please enter your SRM user id (e.g. ab1234)"},
+		}, nil
+	}
+
 	jar, err := lf.initCookieJar()
 	if err != nil {
 		return nil, err

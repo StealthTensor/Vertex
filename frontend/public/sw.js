@@ -1,80 +1,225 @@
-const CACHE_VERSION = "v3-20241116";
-const CACHE_NAME = `vertex-cache-${CACHE_VERSION}`;
-const CORE_ASSETS = [
-  "/",
-  "/site.webmanifest",
+// public/sw.js
+// Production-grade service worker for SPA
+// - network-first for navigation & API
+// - cache-first for static assets (scripts/styles/images)
+// - cache trimming + versioning
+// - client notifications on update
+
+const CACHE_VERSION = "v1-20251117"; // bump this on every deploy (or inject during build)
+const PRECACHE = `vertex-precache-${CACHE_VERSION}`;
+const RUNTIME = `vertex-runtime-${CACHE_VERSION}`;
+const API_CACHE = `vertex-api-${CACHE_VERSION}`;
+
+// Put build-time hashed assets here (recommended). Keep "/" out if you want network-first nav.
+const PRECACHE_URLS = [
   "/favicon.ico",
   "/favicon-96x96.png",
   "/favicon.svg",
-  "/apple-touch-icon.png",
-  "/web-app-manifest-192x192.png",
-  "/web-app-manifest-512x512.png",
+  "/site.webmanifest",
+  // Add other hashed JS/CSS produced by your build, e.g. "/_next/static/chunks/app-abc123.js"
 ];
 
-const CLIENT_MESSAGE_TYPE = "VERTEX_CACHE_INVALIDATED";
+// Runtime cache settings
+const MAX_ASSET_ENTRIES = 60; // max cached static assets
+const MAX_API_ENTRIES = 50;   // max cached API responses
+const MAX_ASSET_AGE = 60 * 60 * 24 * 7; // in seconds => 7 days
+const MAX_API_AGE = 60 * 60 * 24; // 1 day for API fallback
 
-async function notifyClients(payload) {
-  const clientList = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
-  clientList.forEach((client) => {
-    client.postMessage(payload);
+const UPDATE_MESSAGE = "VERTEX_SW_UPDATED";
+
+// helper: send message to all clients
+async function notifyClients(message) {
+  const clients = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+  for (const client of clients) {
+    client.postMessage(message);
+  }
+}
+
+// trim a cache to max entries (FIFO)
+async function trimCache(cacheName, maxEntries) {
+  const cache = await caches.open(cacheName);
+  const keys = await cache.keys();
+  if (keys.length <= maxEntries) return;
+  const removeCount = keys.length - maxEntries;
+  for (let i = 0; i < removeCount; i++) {
+    await cache.delete(keys[i]);
+  }
+}
+
+// safe fetch utility with timeout
+function fetchWithTimeout(request, timeout = 8000) {
+  return new Promise((resolve, reject) => {
+    let timedOut = false;
+    const timer = setTimeout(() => {
+      timedOut = true;
+      reject(new Error("timeout"));
+    }, timeout);
+
+    fetch(request)
+      .then((res) => {
+        if (timedOut) return;
+        clearTimeout(timer);
+        resolve(res);
+      })
+      .catch((err) => {
+        if (timedOut) return;
+        clearTimeout(timer);
+        reject(err);
+      });
   });
 }
 
+// Install: precache core assets
 self.addEventListener("install", (event) => {
+  self.skipWaiting();
   event.waitUntil(
-    caches
-      .open(CACHE_NAME)
-      .then((cache) => cache.addAll(CORE_ASSETS))
-      .then(() => self.skipWaiting())
+    (async () => {
+      const cache = await caches.open(PRECACHE);
+      try {
+        await cache.addAll(PRECACHE_URLS);
+      } catch (e) {
+        // ignore individual failures
+        console.warn("Precaching failed:", e);
+      }
+    })()
   );
 });
 
+// Activate: cleanup old caches and notify clients of update
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     (async () => {
       const keys = await caches.keys();
       await Promise.all(
-        keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
+        keys
+          .filter((k) => ![PRECACHE, RUNTIME, API_CACHE].includes(k))
+          .map((k) => caches.delete(k))
       );
+      await notifyClients({ type: UPDATE_MESSAGE, version: CACHE_VERSION });
       await self.clients.claim();
-      await notifyClients({ type: CLIENT_MESSAGE_TYPE, version: CACHE_VERSION });
     })()
   );
 });
 
-// Cache-first for same-origin static assets, network-first for navigation and JSON
+// Helper: respond with cached asset (cache-first) for static resources
+async function cacheFirst(request) {
+  const cache = await caches.open(RUNTIME);
+  const cached = await cache.match(request);
+  if (cached) return cached;
+  try {
+    const response = await fetch(request);
+    if (response && response.ok) {
+      cache.put(request, response.clone());
+      // trim cache
+      trimCache(RUNTIME, MAX_ASSET_ENTRIES).catch(() => {});
+    }
+    return response;
+  } catch (err) {
+    return cached || new Response(null, { status: 504, statusText: "Gateway Timeout" });
+  }
+}
+
+// Helper: network-first for APIs and navigations, but update cache for fallback
+async function networkFirstWithCacheFallback(request, cacheName = API_CACHE) {
+  const cache = await caches.open(cacheName);
+  try {
+    // try network with a modest timeout
+    const networkResponse = await fetchWithTimeout(request, 8000);
+    if (networkResponse && networkResponse.ok) {
+      try {
+        cache.put(request, networkResponse.clone());
+        // trim API cache
+        trimCache(cacheName, MAX_API_ENTRIES).catch(() => {});
+      } catch (e) {
+        // ignore cache put errors
+      }
+    }
+    return networkResponse;
+  } catch (err) {
+    // network failed or timed out -> fallback to cache
+    const cached = await cache.match(request);
+    if (cached) return cached;
+    return new Response(null, { status: 504, statusText: "Gateway Timeout" });
+  }
+}
+
+// message handler (allows client to skipWaiting or clear caches)
+self.addEventListener("message", (event) => {
+  const data = event.data;
+  if (!data || typeof data !== "object") return;
+  if (data.type === "SKIP_WAITING") {
+    self.skipWaiting();
+  }
+  if (data.type === "CLEAR_CACHES") {
+    (async () => {
+      const keys = await caches.keys();
+      await Promise.all(keys.map((k) => caches.delete(k)));
+    })();
+  }
+});
+
+// Main fetch handler
 self.addEventListener("fetch", (event) => {
-  const req = event.request;
-  const url = new URL(req.url);
+  const request = event.request;
+  const url = new URL(request.url);
 
-  // Only handle GET
-  if (req.method !== "GET") return;
+  // Don't interfere with devtools/extension or cross-origin opaque requests badly
+  if (request.method !== "GET") {
+    // For non-GET, just pass through
+    return;
+  }
 
-  // Navigation requests: network-first
-  if (req.mode === "navigate") {
+  // 1) API requests: network-first with cache-fallback (stale-while-revalidate style)
+  if (url.pathname.startsWith("/api/") || url.pathname === "/api") {
+    event.respondWith(networkFirstWithCacheFallback(request, API_CACHE));
+    return;
+  }
+
+  // 2) Static assets (scripts/styles/images/fonts) -> cache-first
+  if (
+    request.destination === "script" ||
+    request.destination === "style" ||
+    request.destination === "image" ||
+    request.destination === "font"
+  ) {
+    event.respondWith(cacheFirst(request));
+    return;
+  }
+
+  // 3) Navigation (SPA routes) -> network-first, fallback to cached precache index or offline page
+  if (request.mode === "navigate") {
     event.respondWith(
-      fetch(req)
-        .then((res) => {
-          const resClone = res.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(req, resClone));
-          return res;
-        })
-        .catch(() => caches.match(req).then((r) => r || caches.match("/")))
+      (async () => {
+        try {
+          const networkResponse = await fetchWithTimeout(request, 8000);
+          // optionally, cache the navigation response in runtime for offline fallback, but avoid caching forever
+          // skip putting whole index into cache to avoid serving stale shell; only put if you'd like offline support
+          return networkResponse;
+        } catch (err) {
+          // fallback: try to serve a cached precached index.html (if you precached one)
+          const cache = await caches.open(PRECACHE);
+          const cachedIndex = await cache.match("/");
+          if (cachedIndex) return cachedIndex;
+          // If you didn't precache "/", try runtime cache
+          const runtimeCached = await caches.match(request);
+          if (runtimeCached) return runtimeCached;
+          return new Response(
+            '<!doctype html><meta charset="utf-8"><title>Offline</title><meta name="viewport" content="width=device-width"><p>You appear offline.</p>',
+            { headers: { "Content-Type": "text/html" }, status: 200 }
+          );
+        }
+      })()
     );
     return;
   }
 
-  // Same-origin static: cache-first
-  if (url.origin === self.location.origin) {
-    event.respondWith(
-      caches.match(req).then((cached) => {
-        if (cached) return cached;
-        return fetch(req).then((res) => {
-          const resClone = res.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(req, resClone));
-          return res;
-        });
+  // 4) Default: network-first then cache fallback
+  event.respondWith(
+    fetch(request)
+      .then((res) => {
+        // optionally cache generic responses? skip for safety
+        return res;
       })
-    );
-  }
+      .catch(() => caches.match(request))
+  );
 });

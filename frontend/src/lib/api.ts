@@ -99,30 +99,54 @@ async function request<T = Json>(path: string, opts: RequestOptions = {}): Promi
 
   const data = await parseResponse(res);
 
-  if (!res.ok && !allowErrorStatuses.includes(res.status)) {
-    const err: ApiError = new Error(
-      typeof data === "string"
-        ? data
-        : typeof data === "object" && data !== null && "error" in data
-        ? String((data as Record<string, unknown>).error)
-        : `HTTP ${res.status}`
-    );
+    if (!res.ok && !allowErrorStatuses.includes(res.status)) {
+    let message = `HTTP ${res.status}`;
+    if (typeof data === "string") {
+      message = data;
+    } else if (data && typeof data === "object") {
+      
+      if ("__html" in data && typeof (data as any).__html === "string") {
+        
+        try {
+          
+          console.warn("Server returned HTML error page for", url || normalizeApiPath(path), (data as any).__html);
+        } catch {}
+        message = "Server error (received HTML). Please check your input or try again.";
+      } else if ("error" in data && typeof (data as any).error === "string") {
+        message = (data as any).error;
+      } else {
+        try {
+          message = JSON.stringify(data);
+        } catch {
+          message = `HTTP ${res.status}`;
+        }
+      }
+    }
+
+    const err: ApiError = new Error(message) as ApiError;
     err.status = res.status;
     err.data = data;
     throw err;
   }
+
   return data as T;
 }
 
 async function parseResponse(res: Response): Promise<unknown> {
   const text = await res.text();
   if (!text) return null;
+  const start = text.trim().slice(0, 1);
+  if (start === "<") {
+    return { __html: text };
+  }
+
   try {
     return JSON.parse(text);
   } catch {
     return text;
   }
 }
+
 
 export const api = {
   login: (params: { account: string; password: string; cdigest?: string; captcha?: string }) =>
