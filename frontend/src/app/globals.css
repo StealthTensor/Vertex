@@ -1,0 +1,243 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-background: #000000;
+  --color-foreground: #E5E7EB;
+  --font-sans: var(--font-space-grotesk);
+  --font-mono: var(--font-geist-mono);
+}
+
+:root {
+  /* VERTEX MONOCHROMATIC THEME */
+  --vertex-black: #000000;
+  --vertex-dark-grey: #0A0A0A;
+  --vertex-grey: #1A1A1A;
+  --vertex-light-grey: #2A2A2A;
+  --vertex-text-grey: #9CA3AF;
+  --vertex-white: #E5E7EB;
+  --vertex-pure-white: #FFFFFF;
+}
+
+/* GLOBAL STYLES */
+body {
+  background: var(--vertex-black);
+  color: var(--vertex-white);
+  min-height: 100vh;
+  overflow-x: hidden;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* TYPOGRAPHY */
+h1, h2, h3, h4, h5, h6 {
+  color: var(--vertex-pure-white);
+  font-weight: 500;
+  letter-spacing: -0.025em;
+}
+
+@layer utilities {
+  /* ========== VERTEX GLASSMORPHISM UTILITIES ========== */
+  
+  /* GLASSMORPHISM CARD STYLES */
+  .vertex-card {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 1.5rem;
+    color: var(--vertex-white);
+    padding: 1rem;
+    transition: all 0.3s ease;
+  }
+  
+  .vertex-card:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+  
+  .vertex-card-subtle {
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 1.25rem;
+    color: var(--vertex-white);
+    padding: 0.75rem;
+  }
+  
+  /* BUTTON SYSTEM - GLASSMORPHISM */
+  .vertex-btn {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    color: var(--vertex-pure-white);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 0.75rem;
+    padding: 0.5rem 1rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    cursor: pointer;
+  }
+  
+  .vertex-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.3);
+    transform: translateY(-1px);
+  }
+  
+  .vertex-btn-secondary {
+    background: transparent;
+    color: var(--vertex-white);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 0.75rem;
+    padding: 0.5rem 1rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    cursor: pointer;
+  }
+  
+  .vertex-btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.25);
+  }
+  
+  /* INPUT SYSTEM - GLASSMORPHISM */
+  .vertex-input {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: var(--vertex-white);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    transition: all 0.3s ease;
+  }
+  
+  .vertex-input:focus {
+    outline: none;
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.2);
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.05);
+  }
+  
+  /* NAVIGATION COMPONENTS */
+  .vertex-nav-item {
+    color: var(--vertex-text-grey);
+    padding: 0.5rem 1rem;
+    border: 1px solid transparent;
+    border-radius: 0.75rem;
+    transition: all 0.3s ease;
+  }
+  
+  .vertex-nav-item:hover,
+  .vertex-nav-item.active {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: var(--vertex-pure-white);
+  }
+  
+  /* TYPOGRAPHY UTILITIES */
+  .vertex-heading {
+    color: var(--vertex-pure-white);
+    font-weight: 500;
+    letter-spacing: -0.025em;
+  }
+  
+  .vertex-body {
+    color: var(--vertex-white);
+    line-height: 1.6;
+  }
+  
+  .vertex-text-muted {
+    color: var(--vertex-text-grey);
+  }
+  
+  /* ANIMATION UTILITIES */
+  .vertex-transition {
+    transition: all 0.3s ease;
+  }
+  
+  .vertex-hover-lift:hover {
+    transform: translateY(-2px);
+  }
+  
+  /* GLASSMORPHISM SURFACE UTILITIES */
+  .glass-surface {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .glass-surface-subtle {
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  
+  /* BORDER UTILITIES */
+  .apply-border-sm {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .apply-border-md {
+    border: 1px solid rgba(255, 255, 255, 0.15);
+  }
+  
+  .apply-border-lg {
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+  
+  /* INNER SHADOW UTILITY */
+  .apply-inner-shadow-sm {
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.3);
+  }
+  
+  /* BACKGROUND UTILITY */
+  .background-rounded {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+  }
+}
+
+/* ========== COMPONENT OVERRIDES ========== */
+button, .btn, [role="button"] {
+  border-radius: 0.75rem;
+}
+
+input, textarea, select {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--vertex-white);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.75rem;
+}
+
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* SCROLLBAR STYLING */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--vertex-dark-grey);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--vertex-light-grey);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}

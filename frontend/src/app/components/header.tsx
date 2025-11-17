@@ -1,0 +1,43 @@
+import React from "react";
+import { VertexLogo } from "@/components/ui/VertexLogo";
+import { Zen_Dots } from 'next/font/google';
+
+const zenDots = Zen_Dots({
+  weight: '400',
+  subsets: ['latin'],
+});
+
+const Header = ({ value }: { value: string }) => {
+  return (
+    <div className="w-full min-h-20 flex items-center justify-center lg:px-0 px-3">
+      <div className="relative max-w-5xl w-full flex px-4 h-[70%] items-center justify-between apply-border-md rounded-full bg-white/5 backdrop-blur-xl">
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-10 lg:w-auto lg:h-auto lg:inset-0 bg-white/10 blur-3xl -z-10 rounded-full" />
+        <div className="flex gap-4 items-center justify-center">
+          <VertexLogo className="w-11 h-11 text-white" />
+          <h1 className={`text-2xl tracking-widest text-white ${zenDots.className}`}>
+            VERTEX
+          </h1>
+          <span className="sr-only" aria-live="polite">{value}</span>
+        {/* </div>
+         {value !== "root" ? (
+          <Link
+            href="/"
+            className="px-3 py-1.5 rounded-full apply-border-md bg-white/5 hover:bg-white/10 transition-all"
+          >
+            Back
+          </Link>
+        ) : ( 
+          <Link
+            href="/auth/login"
+            className="px-3 py-1.5 rounded-full apply-border-md bg-white/5 hover:bg-white/10 transition-all"
+          >
+            Login
+          </Link>
+         )}*/}
+         </div>
+      </div> 
+    </div>
+  );
+};
+
+export default Header;

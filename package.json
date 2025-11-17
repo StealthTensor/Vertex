@@ -1,0 +1,15 @@
+{
+  "name": "vertex-app",
+  "version": "3.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently \"cd frontend && bun run dev\" \"cd backend && go run src/main.go\" --names \"FRONT,BACK\" --prefix-colors \"blue,red\"",
+    "postinstall": "cd frontend && bun install && cd ../backend && go mod tidy"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  },
+  "dependencies": {
+    "ogl": "^1.0.11"
+  }
+}
