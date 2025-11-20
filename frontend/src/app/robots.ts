@@ -10,6 +10,6 @@ export default function robots(): MetadataRoute.Robots {
       allow: "/",
       disallow: "/app/",
     },
-    sitemap: "https://vertex.system/sitemap.xml",
+    sitemap: "https://vertex123.vercel.app/sitemap.xml",
   };
 }

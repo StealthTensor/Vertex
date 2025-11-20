@@ -1,14 +1,10 @@
 import type { Metadata } from "next";
 import { Geist_Mono, Space_Grotesk } from "next/font/google";
 import "./globals.css";
-// import { TallyModalRoot } from "./TallyModalRoot";
 import SwRegister from "./components/sw-register";
 import { AuthStateWatcher } from "./components/AuthStateWatcher";
-// REMOVE THIS:
-// import { Toaster } from "sonner";
-
-// ADD THIS:
-import { ToasterClientComponent } from "./toaster"; // <-- ADD THIS
+import { ToasterClientComponent } from "./toaster";
+import { Analytics } from "@vercel/analytics/next"
 
 const spaceGrotesk = Space_Grotesk({
   variable: "--font-space-grotesk",
@@ -27,12 +23,15 @@ const description =
 export const metadata: Metadata = {
   title: "VERTEX",
   description,
+  verification: {
+    google: "lqZoy4RwbD94xx4x_rz8CjmuvarmsG32kB5obHt0kdc",
+  },
   authors: [{ name: "StealthTensor" }],
   keywords: ["VERTEX",  "ACADEMIC"],
   openGraph: {
     title: "VERTEX",
     description,
-    url: "https://vertex.system",
+    url: "https://vertex123.vercel.app",
     siteName: "VERTEX",
     images: [
       {
@@ -95,17 +94,11 @@ export default function RootLayout({
           fontFamily: 'var(--font-inter)'
         }}
       >
-        {/* <TallyModalRoot /> */}
-
         <SwRegister />
         <AuthStateWatcher />
-        {/* REPLACE THIS: */}
-        {/* <Toaster position="top-right" richColors /> */}
-        
-        {/* WITH THIS: */}
         <ToasterClientComponent /> 
-        
         {children}
+        <Analytics/>
       </body>
     </html>
   );

@@ -52,8 +52,8 @@ func main() {
 
 	app := fiber.New(fiber.Config{
 		Prefork:      false,
-		ServerHeader: "GoScraper",
-		AppName:      "GoScraper v3.0",
+		ServerHeader: "Backend",
+		AppName:      "Vertex Backend v6",
 		JSONEncoder:  json.Marshal,
 		JSONDecoder:  json.Unmarshal,
 		ErrorHandler: func(c *fiber.Ctx, err error) error {

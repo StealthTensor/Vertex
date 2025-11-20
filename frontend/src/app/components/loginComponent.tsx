@@ -356,7 +356,7 @@ export const LoginComponent = () => {
               disabled={loading}
               className="w-full px-4 py-3 rounded-xl apply-inner-shadow-md bg-black  focus:outline-none  flex item-center justify-center cursor-pointer"
             >
-              {loading ? <Loader className="w-5 h-5 " /> : "Authenticate"}
+              {loading ? <Loader className="w-5 h-5 " /> : "Login"}
             </button>
           </form>
         </div>

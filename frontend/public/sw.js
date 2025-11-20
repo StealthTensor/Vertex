@@ -204,9 +204,25 @@ self.addEventListener("fetch", (event) => {
           const runtimeCached = await caches.match(request);
           if (runtimeCached) return runtimeCached;
           return new Response(
-            '<!doctype html><meta charset="utf-8"><title>Offline</title><meta name="viewport" content="width=device-width"><p>You appear offline.</p>',
-            { headers: { "Content-Type": "text/html" }, status: 200 }
-          );
+  `<!doctype html>
+<meta charset="utf-8">
+<title>Offline</title>
+<meta name="viewport" content="width=device-width">
+<style>
+  body {
+    background-color: #09090b;
+    color: #ffffff;
+    font-family: system-ui, sans-serif;
+    height: 100vh;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+</style>
+<p>You appear offline.</p>`,
+  { headers: { "Content-Type": "text/html" }, status: 200 }
+);
         }
       })()
     );

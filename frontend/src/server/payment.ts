@@ -21,7 +21,7 @@ export async function createPaymentLink(userInfo: PaymentUserInfo) {
         contact: userInfo.contact,
         email: userInfo.email,
       },
-      callback_url: "https://vertex.system/app/timetable",
+      callback_url: "https://vertex123.vercel.app/app/timetable",
       callback_method: "get",
     });
 
