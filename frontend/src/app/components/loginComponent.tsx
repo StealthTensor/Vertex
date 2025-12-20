@@ -8,6 +8,8 @@ import Cookies from "js-cookie";
 import { Loader } from "../app/components/loader";
 import { DEV_TOKEN_PREFIX } from "@/utils/devMode";
 import { emitAuthEvent } from "@/utils/authSync";
+import { encrypt } from "@/utils/encryption";
+import { updateUserCache } from "@/lib/userCache";
 
 
 type LoginPayload = {
@@ -97,7 +99,7 @@ export const LoginComponent = () => {
 
   const HandleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    
+
     setLoading(true);
     setError("");
 
@@ -148,7 +150,7 @@ export const LoginComponent = () => {
             Cookies.set("token", devToken, { expires: 30, path: "/" });
             Cookies.set("user", email.mail, { expires: 30, path: "/" });
             emitAuthEvent("login");
-            return (window.location.href = "/app/timetable");
+            return (window.location.href = "/app/dashboard");
           } else {
             setError("Invalid dev credentials");
             setLoading(false);
@@ -208,12 +210,21 @@ export const LoginComponent = () => {
           if (hasCookies) {
             Cookies.set("token", cookiesText, { expires: 30, path: "/" });
             Cookies.set("user", email.mail, { expires: 30, path: "/" });
+
+            // Cache email and encrypted password
+            // Use environment variable for key if available, otherwise fallback to the one provided in the prompt
+            const encryptionKey = process.env.NEXT_PUBLIC_ENCRYPTION_KEY || "@Ethical_Hacker2";
+            encrypt(hash2, encryptionKey).then((encryptedPassword) => {
+              updateUserCache(email.mail, encryptedPassword);
+            }).catch((err) => {
+              console.error("Encryption failed:", err);
+            });
           }
           setCaptchaImage(null);
           setCaptchaDigest(null);
           setCaptchaCode("");
           emitAuthEvent("login");
-          return (window.location.href = "/app/timetable");
+          return (window.location.href = "/app/dashboard");
         }
 
         const errorsValue = responseRecord["errors"];
@@ -230,8 +241,8 @@ export const LoginComponent = () => {
           typeof statusCodeRaw === "number"
             ? statusCodeRaw
             : typeof statusCodeRaw === "string"
-            ? Number(statusCodeRaw)
-            : null;
+              ? Number(statusCodeRaw)
+              : null;
         const sessionFailure =
           !!sessionRecord && typeof sessionRecord["success"] === "boolean" && sessionRecord["success"] === false;
         const invalidPassword =
@@ -263,12 +274,12 @@ export const LoginComponent = () => {
         setLoading(false);
         return;
       }
-      
+
       // Handle JSON parsing errors
-      if (errorMessage.includes("Unexpected token '<'") || 
-          errorMessage.includes("<html") || 
-          errorMessage.includes("JSON") ||
-          errorMessage.includes("not valid JSON")) {
+      if (errorMessage.includes("Unexpected token '<'") ||
+        errorMessage.includes("<html") ||
+        errorMessage.includes("JSON") ||
+        errorMessage.includes("not valid JSON")) {
         setError("Login service is temporarily unavailable. Please try again in a few moments.");
       } else {
         setError(toMessage(errorMessage));
@@ -356,7 +367,7 @@ export const LoginComponent = () => {
               disabled={loading}
               className="w-full px-4 py-3 rounded-xl apply-inner-shadow-md bg-black  focus:outline-none  flex item-center justify-center cursor-pointer"
             >
-              {loading ? <Loader className="w-5 h-5 " /> : "Login"}
+              {loading ? <Loader className="w-6 h-6 " /> : <h1>Login</h1> }
             </button>
           </form>
         </div>

@@ -16,7 +16,13 @@ const Page = () => {
     const clearSession = async () => {
       const token = getCookie();
       if (token) {
-        await getLogout(token);
+        try {
+          await getLogout(token);
+        } catch (error) {
+          console.error("Logout API failed:", error);
+        }
+
+        // Always clear cookies
         Object.keys(Cookies.get()).forEach((cookieName) => {
           Cookies.remove(cookieName);
         });

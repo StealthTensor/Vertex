@@ -31,6 +31,7 @@ declare module "srm-academia-api" {
 
   export type MarkDetail = {
     course: string;
+    subject: string;
     category: string;
     marks: Array<{ exam: string; obtained: number; maxMark: number }>;
     total: { obtained: number; maxMark: number };

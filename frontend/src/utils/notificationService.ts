@@ -17,7 +17,7 @@ export interface DailyScheduleEntry {
 export class VertexNotificationService {
   private static readonly NTFY_BASE_URL = 'https://ntfy.sh';
   private static readonly DEFAULT_TOPIC = 'vertex-academic-app';
-  
+
   /**
    * Send a notification via NTFY.sh
    */
@@ -49,7 +49,7 @@ export class VertexNotificationService {
    * Send daily schedule notification
    */
   static async sendDailySchedule(userTopic: string, schedule: DailyScheduleEntry[]): Promise<boolean> {
-    const scheduleText = schedule.length > 0 
+    const scheduleText = schedule.length > 0
       ? schedule.map((s) => `${s.time}: ${s.subject}`).join('\n')
       : 'No classes scheduled for today';
 
@@ -59,7 +59,7 @@ export class VertexNotificationService {
       message: `Good morning! Here's your schedule:\n\n${scheduleText}`,
       priority: 'high',
       tags: ['skull', 'schedule', 'vertex'],
-      click: `${process.env.NEXT_PUBLIC_APP_URL}/app/timetable`,
+      click: `${process.env.NEXT_PUBLIC_APP_URL}/app/dashboard`,
     });
   }
 
@@ -131,7 +131,7 @@ export class VertexNotificationScheduler {
       // This would trigger the daily schedule notification
       // In a real app, this would be handled by a backend service
       console.log('Daily notification triggered for topic:', topic);
-      
+
       // Reschedule for next day
       this.scheduleDailyNotification(topic, hour, minute);
     }, timeUntilNotification);

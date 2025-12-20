@@ -1,8 +1,11 @@
 package handlers
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"goscraper/src/globals"
 	neturl "net/url"
 	"sort"
 	"strings"
@@ -570,6 +573,11 @@ func (lf *LoginFetcher) GetSession(password string, lookup map[string]interface{
 		fmt.Printf("Warning: No Set-Cookie headers found in login response\n")
 	}
 	data["cookies"] = cookies
+
+	// Store session in active sessions
+	hash := sha256.Sum256([]byte(cookies))
+	hashStr := hex.EncodeToString(hash[:])
+	globals.ActiveSessions.Store(hashStr, true)
 
 	return data, nil
 }

@@ -8,9 +8,7 @@ const nextConfig = {
   outputFileTracingRoot: __dirname,
   trailingSlash: true,
   reactStrictMode: true,
-  experimental: {
-    globalNotFound: true,
-  },
+
   images: {
     unoptimized: true,
   },

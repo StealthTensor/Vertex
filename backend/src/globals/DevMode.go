@@ -1,5 +1,8 @@
 package globals
 
+import "sync"
+
 var (
-    DevMode bool = true
+	DevMode        bool = true
+	ActiveSessions sync.Map
 )

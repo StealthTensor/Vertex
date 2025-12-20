@@ -1,6 +1,9 @@
 import React from "react";
 import { Metadata } from "next";
 import QueryProvider from "./components/provider";
+import Sidebar from "@/components/app/Sidebar";
+
+
 export const metadata: Metadata = {
   title: "VERTEX",
   description: "VERTEX - Academic Management System",
@@ -14,5 +17,12 @@ export default async function Layout({
 }: {
   children: React.ReactNode;
 }) {
-  return <QueryProvider>{children}</QueryProvider>;
+  return (
+    <QueryProvider>
+      <Sidebar />
+      <div className="md:pl-64">
+        {children}
+      </div>
+    </QueryProvider>
+  );
 }

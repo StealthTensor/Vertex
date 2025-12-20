@@ -1,8 +1,13 @@
 "use client";
-import React from "react";
+
 import { useCourse, useMarks } from "@/hooks/query";
+import React from "react";
 import { GlobalLoader } from "../components/loader";
 import { formatNumber, formatPercentage, roundTo } from "@/utils/number";
+import { Card } from "@/app/components/ui/Card";
+import { Badge } from "@/app/components/ui/Badge";
+import { Percent, TrendingUp, ChevronLeft } from "lucide-react";
+import Link from "next/link";
 
 const PercentagePage = () => {
   const { data: marks, isPending } = useMarks();
@@ -11,8 +16,8 @@ const PercentagePage = () => {
   if (isPending) return <GlobalLoader className="h-10 w-10 text-white" />;
   if (!marks || marks.length === 0)
     return (
-      <div className="flex h-full w-full justify-center items-center">
-        No data found
+      <div className="flex h-full w-full justify-center items-center text-zinc-500">
+        No academic data found
       </div>
     );
 
@@ -39,47 +44,78 @@ const PercentagePage = () => {
       obtained: roundedObtained,
       max: roundedMax,
     };
-  });
+  }).sort((a, b) => b.percent - a.percent);
 
   return (
-    <div className="flex flex-col gap-6 py-2 ">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 px-2 lg:px-5">
-        <div className="rounded-xl apply-border-md bg-white/5 p-4 text-center">
-          <div className="text-white/60 text-sm">Total Marks</div>
-          <div className="text-white text-2xl font-semibold">{formatNumber(roundedTotalObtained, 1)} / {formatNumber(roundedTotalMax, 1)}</div>
-        </div>
-        <div className="rounded-xl apply-border-md bg-white/5 p-4 text-center">
-          <div className="text-white/60 text-sm">Total Percentage</div>
-          <div className="text-white text-2xl font-semibold">{roundedTotalPercentage}%</div>
-        </div>
-        <div className="rounded-xl apply-border-md bg-white/5 p-4 text-center">
-          <div className="text-white/60 text-sm">Courses</div>
-          <div className="text-white text-2xl font-semibold">{withCourseMeta.length}</div>
-        </div>
+    <main className="flex flex-col gap-6 py-6 pb-20 px-4 sm:px-6 w-full max-w-5xl mx-auto min-h-screen">
+      <div className="absolute top-6 left-6 bg-zinc-900/50 p-3 rounded-full border border-zinc-800"><Link href="/app/settings"><ChevronLeft size={24} /></Link></div>
+      {/* Header Cards Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card className="flex flex-col items-center justify-center p-6 bg-zinc-900/20 border-zinc-800/50">
+          <div className="text-zinc-500 text-xs uppercase tracking-widest font-medium mb-1">Total Marks</div>
+          <div className="text-2xl font-bold text-white font-display tracking-tight">
+            {formatNumber(roundedTotalObtained, 1)} <span className="text-zinc-600 text-lg">/</span> {formatNumber(roundedTotalMax, 1)}
+          </div>
+        </Card>
+
+        <Card className="flex flex-col items-center justify-center p-6 bg-zinc-900/20 border-zinc-800/50 md:col-span-2 relative overflow-hidden group">
+          <div className="absolute inset-0 bg-emerald-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+          <div className="flex items-center gap-3 mb-1">
+            <Percent size={18} className="text-emerald-500" />
+            <span className="text-zinc-500 text-xs uppercase tracking-widest font-medium">Overall Aggregate</span>
+          </div>
+          <div className="text-4xl sm:text-5xl font-bold text-white font-display tracking-tight z-10">
+            {roundedTotalPercentage}%
+          </div>
+        </Card>
       </div>
 
-      <div className="py-2 xl:grid-cols-4 lg:grid-cols-3 md:grid-cols-2 sm:grid-cols-1 w-full grid gap-4 px-2 lg:px-5">
-        {withCourseMeta.map((item) => (
-          <div
-            key={`${item.code}-${item.type ?? ""}`}
-            className="rounded-xl apply-border-md bg-[#16171b] p-4 text-white/80 flex flex-col gap-3"
-          >
-            <div className="flex items-center justify-between border-b border-white/10 pb-2">
-              <span className="text-white font-medium truncate pr-2">{item.title}</span>
-              <span className="px-2 py-0.5 rounded-lg text-sm bg-black text-white/80 apply-border-sm">{item.code}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-white/70 text-sm">Marks</span>
-              <span className="text-white">{formatNumber(item.obtained, 1)} / {formatNumber(item.max, 1)}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-white/70 text-sm">Percentage</span>
-              <span className={item.percent >= 75 ? "text-green-400" : "text-yellow-300"}>{formatPercentage(item.percent, 2)}%</span>
-            </div>
-          </div>
-        ))}
+      <div className="space-y-4">
+        <div className="flex items-center gap-2 mb-2 px-1">
+          <TrendingUp size={18} className="text-emerald-500" />
+          <h2 className="text-xs font-medium text-zinc-500 uppercase tracking-widest">
+            Detailed Breakdown
+          </h2>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {withCourseMeta.map((item, i) => (
+            <Card key={i} className="flex flex-col justify-between p-4 bg-zinc-900/20 border-zinc-800/50 hover:bg-zinc-900/40 transition-colors group">
+              <div className="mb-4">
+                <div className="flex justify-between items-start mb-2">
+                  <span className="text-xs font-mono text-zinc-500 bg-zinc-800/50 px-1.5 py-0.5 rounded border border-zinc-800">
+                    {item.code}
+                  </span>
+                  <Badge variant="outline" className={`border-emerald-500/20 bg-emerald-500/5 text-emerald-500 ${item.percent < 75 ? 'border-amber-500/20 bg-amber-500/5 text-amber-500' : ''}`}>
+                    {formatNumber(item.percent, 1)}%
+                  </Badge>
+                </div>
+                <h3 className="text-sm font-medium text-white/90 line-clamp-2 min-h-[2.5rem]">
+                  {item.title}
+                </h3>
+              </div>
+
+              <div className="relative pt-2 border-t border-zinc-800/50 flex items-center justify-between text-xs">
+                <span className="text-zinc-500">Score</span>
+                <div className="font-mono text-zinc-300">
+                  <span className="text-white font-semibold">{formatNumber(item.obtained)}</span>
+                  <span className="text-zinc-600 mx-1">/</span>
+                  {formatNumber(item.max)}
+                </div>
+              </div>
+
+              {/* Progress Bar Visual */}
+              <div className="mt-3 w-full h-1 bg-zinc-800 rounded-full overflow-hidden">
+                <div
+                  className={`h-full rounded-full ${item.percent >= 75 ? 'bg-emerald-500' : 'bg-amber-500'}`}
+                  style={{ width: `${Math.min(item.percent, 100)}%` }}
+                />
+              </div>
+            </Card>
+          ))}
+        </div>
       </div>
-    </div>
+    </main>
   );
 };
 

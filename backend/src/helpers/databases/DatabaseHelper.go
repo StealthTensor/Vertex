@@ -103,11 +103,13 @@ func (db *DatabaseHelper) UpsertData(table string, data map[string]interface{}) 
 			if err != nil {
 				return err
 			}
-			encrypted, err := db.encrypt(string(jsonBytes))
-			if err != nil {
-				return err
-			}
-			data[key] = encrypted
+			// Encryption disabled per user request
+			// encrypted, err := db.encrypt(string(jsonBytes))
+			// if err != nil {
+			// 	return err
+			// }
+			// data[key] = encrypted
+			data[key] = string(jsonBytes)
 		}
 
 	}
@@ -142,11 +144,13 @@ func (db *DatabaseHelper) ReadData(table string, query map[string]interface{}) (
 		for key, value := range row {
 			if str, ok := value.(string); ok {
 				if key != "regNumber" && key != "token" && key != "lastUpdated" && key != "timetable" && key != "ophour" {
-					decrypted, err := db.decrypt(str)
-					if err != nil {
-						return nil, err
-					}
-					row[key] = decrypted
+					// Decryption disabled - assuming plaintext
+					// decrypted, err := db.decrypt(str)
+					// if err != nil {
+					// 	return nil, err
+					// }
+					// row[key] = decrypted
+					row[key] = str
 				}
 			}
 		}
@@ -180,12 +184,14 @@ func (db *DatabaseHelper) FindByToken(table string, token string) (map[string]in
 				}
 				results[0][key] = jsonData
 			} else if key != "regNumber" && key != "token" && key != "lastUpdated" && key != "timetable" && key != "ophour" {
-				decrypted, err := db.decrypt(str)
-				if err != nil {
-					return nil, err
-				}
+				// Decryption disabled - assuming plaintext
+				// decrypted, err := db.decrypt(str)
+				// if err != nil {
+				// 	return nil, err
+				// }
 				var jsonData interface{}
-				if err := json.Unmarshal([]byte(decrypted), &jsonData); err != nil {
+				// if err := json.Unmarshal([]byte(decrypted), &jsonData); err != nil {
+				if err := json.Unmarshal([]byte(str), &jsonData); err != nil {
 					return nil, err
 				}
 				results[0][key] = jsonData

@@ -1,6 +1,8 @@
 package main
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -9,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"goscraper/src/globals"
@@ -29,7 +32,7 @@ import (
 
 const (
 	defaultPort = "7860"
-	staticDir   = "./static"
+	staticDir   = "../static"
 )
 
 func main() {
@@ -110,6 +113,17 @@ func main() {
 				"error": "Missing X-CSRF-Token header",
 			})
 		}
+
+		// Validate against ActiveSessions
+		hash := sha256.Sum256([]byte(token))
+		hashStr := hex.EncodeToString(hash[:])
+		
+		if _, ok := globals.ActiveSessions.Load(hashStr); !ok {
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+				"error": "Session expired or invalid. Please login again.",
+			})
+		}
+
 		return c.Next()
 	})
 
@@ -150,16 +164,44 @@ func main() {
 				})
 			}
 		} else {
+			// SRM Cookie Token
 			tokenStr := strings.TrimPrefix(token, "Bearer ")
-			valid, err := utils.ValidateToken(tokenStr)
-			if err != nil || !*valid {
-				return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
-					"error": "Invalid token: " + tokenStr,
+			
+			// Validate against ActiveSessions
+			hash := sha256.Sum256([]byte(tokenStr))
+			hashStr := hex.EncodeToString(hash[:])
+			
+			if _, ok := globals.ActiveSessions.Load(hashStr); !ok {
+				return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+					"error": "Session expired or invalid. Please login again.",
 				})
 			}
+			
+			// Legacy validation (keep it for now as secondary check if needed, or remove if purely relying on ActiveSessions)
+			// valid, err := utils.ValidateToken(tokenStr)
+			// if err != nil || !*valid { ... }
 		}
 
 		return c.Next()
+	})
+
+	api.Post("/admin/logout-all", func(c *fiber.Ctx) error {
+		var body struct {
+			Key string `json:"key"`
+		}
+		if err := c.BodyParser(&body); err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid body"})
+		}
+
+		// Simple hardcoded key for now, as requested
+		if body.Key != "vertex-admin-secret" {
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Invalid admin key"})
+		}
+
+		// Clear all sessions
+		globals.ActiveSessions = sync.Map{}
+		
+		return c.JSON(fiber.Map{"message": "All users logged out successfully"})
 	})
 
 	// Universal error handling middleware
@@ -488,7 +530,7 @@ func fetchAllData(token string) (map[string]interface{}, error) {
 
 func isPublicRoute(path string) bool {
 	switch path {
-	case "/api/login", "/api/health":
+	case "/api/login", "/api/health", "/api/admin/logout-all":
 		return true
 	default:
 		return false
@@ -530,7 +572,7 @@ func serveSPAIndex(c *fiber.Ctx, indexPath string) error {
 func buildAllowedOrigins() string {
 	origins := []string{"http://localhost:7860"}
 	if globals.DevMode {
-		origins = append(origins, "http://localhost:3000", "http://localhost:243")
+		origins = append(origins, "http://localhost:3000", "http://localhost:243", "http://127.0.0.1:3000", "http://127.0.0.1:7860")
 	}
 	appendOrigin := func(value string) {
 		value = strings.TrimSpace(value)

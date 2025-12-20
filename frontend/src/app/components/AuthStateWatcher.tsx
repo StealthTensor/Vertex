@@ -26,7 +26,7 @@ const enforceRouteForState = (hasToken: boolean, forceReload = false) => {
 
   if (hasToken) {
     if (onAuthRoute && !authRouteAllowed) {
-      redirectTo("/app/timetable");
+      redirectTo("/app/dashboard");
     } else if (forceReload && onProtectedRoute) {
       window.location.reload();
     }

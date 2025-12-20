@@ -1,8 +1,8 @@
-# Vertex v5 (Monolith)
+# Vertex v7 (Monolith)
 
 **Full-Stack Academic Dashboard & Scraper**
 
-Vertex v5 is a fully containerized academic dashboard optimized for self-hosted deployment. It combines a **Go Fiber backend** (Goscraper) that dynamically parses SRM Academia data with a **Next.js 15 frontend** exported statically for high performance.
+Vertex v7 is a fully containerized academic dashboard optimized for self-hosted deployment. It combines a **Go Fiber backend** (Goscraper) that dynamically parses SRM Academia data with a **Next.js 15 frontend** exported statically for high performance.
 
 ##  Architecture
 

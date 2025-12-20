@@ -1,9 +1,18 @@
 "use client";
 import { useCourse, useMarks } from "@/hooks/query";
-import React from "react";
+import React, { useState } from "react";
 import { CourseDetail, MarkDetail } from "srm-academia-api";
 import { GlobalLoader } from "../components/loader";
 import { formatNumber, formatPercentage, roundTo } from "@/utils/number";
+
+import { Card } from "@/app/components/ui/Card";
+import { Badge } from "@/app/components/ui/Badge";
+import { Button } from "@/app/components/ui/Button";
+
+// Animation & Charts
+import { motion, AnimatePresence } from "motion/react";
+import { LineChart } from "@mui/x-charts/LineChart";
+import { TotalMarksCard } from "@/app/components/TotalMarksCard";
 
 const Page = () => {
   const { data, isPending } = useMarks();
@@ -47,26 +56,35 @@ const Page = () => {
   const formattedCgpa = formatNumber(cgpa, 2);
 
   return (
-    <div className="flex flex-col gap-4 py-2 ">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 px-2 lg:px-5">
-        <div className="rounded-xl apply-border-md bg-white/5 p-4 text-center">
-          <div className="text-white/60 text-sm">Total Marks</div>
-          <div className="text-white text-2xl font-semibold">{formatNumber(roundedTotalObtained, 1)} / {formatNumber(roundedTotalMax, 1)}</div>
+    <main className="flex flex-col gap-6 py-6 pb-20 px-4 sm:px-6 w-full max-w-[1600px] mx-auto min-h-screen">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 gap-4">
+          <Card className="pt-4 p-4 text-center bg-zinc-900/20 border-zinc-800/50">
+            <div className="text-zinc-500 text-xs uppercase tracking-wider mb-1">Percentage</div>
+            <div className="text-white text-2xl font-semibold font-display tracking-tight">{roundedTotalPercentage}%</div>
+          </Card>
+
+          <Card className="pt-4 p-4 text-center bg-zinc-900/20 border-zinc-800/50">
+            <div className="text-zinc-500 text-xs uppercase tracking-wider mb-1">CGPA</div>
+            <div className="text-white text-2xl font-semibold font-display tracking-tight">{formattedCgpa}</div>
+          </Card>
         </div>
-        <div className="rounded-xl apply-border-md bg-white/5 p-4 text-center">
-          <div className="text-white/60 text-sm">Total Percentage</div>
-          <div className="text-white text-2xl font-semibold">{roundedTotalPercentage}%</div>
+
+        {/* New Interactive Radar Chart Component */}
+        <TotalMarksCard marks={data} />
+      </div>
+
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-lg font-medium text-white mb-4 pl-1">Theory Modules</h2>
+          <Data data={data} category="theory" />
         </div>
-        <div className="rounded-xl apply-border-md bg-white/5 p-4 text-center">
-          <div className="text-white/60 text-sm">CGPA</div>
-          <div className="text-white text-2xl font-semibold">{formattedCgpa}</div>
+        <div>
+          <h2 className="text-lg font-medium text-white mb-4 pl-1">Practical Modules</h2>
+          <Data data={data} category="practical" />
         </div>
       </div>
-      <h1 className="text-2xl text-white font-medium">Theory</h1>
-      <Data data={data} category="theory" />
-      <h1 className="text-2xl text-white font-medium">Practical</h1>
-      <Data data={data} category="practical" />
-    </div>
+    </main>
   );
 };
 
@@ -100,7 +118,7 @@ const Data = ({ data, category }: { data: MarkDetail[]; category: string }) => {
   }
 
   return (
-    <div className="py-5 xl:grid-cols-4 lg:grid-cols-3 md:grid-cols-2 sm:grid-cols-1 w-full grid gap-4 px-2 lg:px-5">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
       {filteredData.map((item, i) => {
         const courseList = course?.find((i) => i.courseCode === item.course);
         return (
@@ -128,166 +146,183 @@ const CourseItem = ({
   calculateRequiredMarks: (grade: string, internalMarks: number) => number;
   getMarks: (grade: string) => number;
 }) => {
-  const [selectedGrade, setSelectedGrade] = React.useState("O");
-  const [obtainedMarks, setObtainedMarks] = React.useState(item.total.obtained);
+  const [isExpanded, setIsExpanded] = useState(false);
 
-  // Calculate required marks out of 75 to achieve the selected grade
-  const requiredMarks = calculateRequiredMarks(selectedGrade, obtainedMarks);
-  const formattedRequiredMarks = formatNumber(requiredMarks);
+  // Prepare chart data
+  const chartData = React.useMemo(() => {
+    // Helper to parse roman numerals for sorting
+    const romanToInt = (str: string) => {
+      const roman = { I: 1, V: 5, X: 10, L: 50 };
+      let num = 0;
+      let match = str.match(/[IVXL]+$/);
+      if (!match) return 0;
+      let s = match[0];
+      for (let i = 0; i < s.length; i++) {
+        // @ts-ignore
+        const curr = roman[s[i]];
+        // @ts-ignore
+        const next = roman[s[i + 1]];
+        if (next && curr < next) num -= curr;
+        else num += curr;
+      }
+      return num;
+    };
 
-  // Determine if required marks exceed 75
-  const isRequiredMarksExceeded = requiredMarks > 75;
+    const getExamWeight = (exam: string) => {
+      // Prioritize sorting: FT/CT/Cycle Test < Model < University/Semester
+      // Within type, sort by number/roman
+      const clean = exam.toUpperCase();
+      let baseWeight = 0;
+      if (clean.includes("FT") || clean.includes("CT") || clean.includes("CYCLE")) baseWeight = 0;
+      else if (clean.includes("LLT")) baseWeight = 100;
+      else if (clean.includes("MODEL")) baseWeight = 200;
+      else baseWeight = 300;
 
-  // Handle grade change
-  const handleGradeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setSelectedGrade(e.target.value);
-  };
+      return baseWeight + romanToInt(clean) + (parseInt(clean.replace(/\D/g, '')) || 0);
+    };
 
-  // Handle obtained marks change
-  const handleObtainedMarksChange = (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const value = parseInt(e.target.value) || 0;
-    if (courseList?.courseCode?.endsWith("P")) {
-      setObtainedMarks(value > 100 ? 100 : value);
-    } else {
-      setObtainedMarks(value > 60 ? 60 : value);
-    }
-  };
+    const mapped = item.marks.map((m) => {
+      const obtained = m.obtained ?? 0;
+      const max = m.maxMark ?? 0;
+      const percentage = max > 0 ? (obtained / max) * 100 : 0;
+      return {
+        exam: m.exam,
+        percentage: percentage,
+        obtained: obtained,
+        max: max
+      };
+    });
+
+    return mapped.sort((a, b) => getExamWeight(a.exam) - getExamWeight(b.exam));
+  }, [item.marks]);
 
   return (
-    <div className=" flex flex-col items-center gap-3 rounded-xl apply-border-md bg-[#16171b] min-h-50 shadow-2xl  ">
-      <div className="w-full h-full text-white/70  flex flex-col gap-4 ">
-        <div className="flex justify-between w-full px-2 min-h-14 items-center border-b border-white/5 gap-4 ">
-          <div className="flex gap-1  px-1 py-0.5  text-sm items-center w-[60%]">
-            {courseList?.courseTitle}
-          </div>
+    <motion.div
+      layout
+      transition={{ layout: { duration: 0.3, type: "spring", stiffness: 300, damping: 30 } }}
+      onClick={() => setIsExpanded(!isExpanded)}
+      className="group relative overflow-hidden bg-zinc-900/20 border border-zinc-800/50 rounded-xl hover:border-zinc-700/50 cursor-pointer hover:shadow-2xl hover:shadow-emerald-900/10"
+      style={{
+        zIndex: isExpanded ? 50 : 0,
+      }}
+    >
+      <motion.div layout="position" className="p-4 flex flex-col gap-1">
 
-          <div className="flex gap-1.5 bg-white/5  px-1 py-0.5 rounded-lg text-sm apply-border-sm pl-2">
-            <h1 className="flex items-center  text-sm  ">Credit</h1>
-            <span className="px-2 rounded-lg text-sm  apply-border-sm  bg-black text-green-400">
-              {courseList?.courseCredit}
+        {/* Header */}
+        <div className="flex justify-between items-start gap-4">
+          <h3 className="text-sm font-medium text-white/90 line-clamp-2 leading-relaxed h-10 w-[70%]">
+            {courseList?.courseTitle}
+          </h3>
+          <div className="flex flex-col items-end gap-1">
+            <span className="text-[10px] font-mono text-zinc-500 bg-zinc-800/50 px-1.5 py-0.5 rounded border border-zinc-800" title="Credits">
+              {courseList?.courseCredit}C
+            </span>
+            <span className="text-[10px] uppercase font-bold text-zinc-600 tracking-wider">
+              {courseList?.courseCode?.endsWith("P") ? "LAB" : "TH"}
             </span>
           </div>
         </div>
-        <div className=" flex items-center justify-center w-full h-full mx-auto  ">
+
+        {/* Content */}
+        <div className="flex-1 flex flex-col justify-center py-2">
           {item.marks.length === 0 ? (
-            <div className="text-red-400">No Marks</div>
+            <div className="text-red-400 text-center text-sm py-4 bg-red-500/5 rounded-lg border border-red-500/10">No Marks Data</div>
           ) : (
             <MarkData data={item} />
           )}
         </div>
-        <div className="flex justify-between w-full px-2 min-h-12 items-center  border-white/5">
-          <div className="flex bg-white/5  px-2 py-0.5 rounded-lg text-sm apply-border-sm items-center">
-            <h1 className="capitalize">{courseList?.courseCode}</h1>
-          </div>
-          <div className="flex bg-white/5 pl-1.5 pr-1 py-0.5 rounded-lg text-sm apply-border-sm items-center gap-2">
-            <h1 className="capitalize">{formatNumber(item.total?.obtained ?? 0)}</h1>
-            <span
-              className={`rounded-lg px-1  text-sm apply-border-sm bg-black text-white`}
-            >
-              {formatNumber(item.total?.maxMark ?? 0)}
-            </span>
+
+        {/* Footer Stats */}
+        <div className="pt-3 border-t border-zinc-800/50 flex items-center justify-between">
+          <span className="text-xs text-zinc-500 font-mono">{courseList?.courseCode}</span>
+          <div className="flex items-center gap-2">
+            <span className="text-lg font-semibold text-white tracking-tight">{formatNumber(item.total?.obtained ?? 0)}</span>
+            <span className="text-xs text-zinc-600">/ {formatNumber(item.total?.maxMark ?? 0)}</span>
           </div>
         </div>
-      </div>
-      {item.marks.length > 0 && (
-        <div className="w-full text-sm items-center flex flex-wrap md:flex-nowrap justify-between p-2 bg-white/5 border-b border-l border-r rounded-bl-xl rounded-br-xl border-dotted border-white/20 gap-2">
-          {courseList?.courseCode?.endsWith("P") ? (
-            // For practical courses (ending with P)
-            <div className="w-full flex flex-wrap md:flex-nowrap justify-between items-center">
-              <div className="flex items-center gap-2">
-                <input
-                  value={obtainedMarks}
-                  onChange={(e) => {
-                    const value = parseInt(e.target.value) || 0;
-                    setObtainedMarks(value > 100 ? 100 : value);
-                  }}
-                  className="w-14 bg-white/5 px-2 py-1 rounded-lg text-sm apply-border-sm items-center touch-manipulation text-center"
-                />
-                <span className="text-white/50">|</span>
-                <span>100</span>
+      </motion.div>
+
+      {/* Expanded Chart View */}
+      <AnimatePresence>
+        {isExpanded && chartData.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 320 }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.3 }}
+            className="px-4 pb-4 overflow-hidden"
+          >
+            <div className="h-[300px] w-full mt-4 bg-zinc-950/30 rounded-lg border border-zinc-800/50 p-2 relative pl-0">
+              <div className="absolute top-2 left-0 right-0 flex justify-center z-10">
+                <div className="flex items-center gap-2 text-xs text-indigo-400">
+                  <span className="w-2 h-2 rounded-full bg-indigo-500"></span>
+                  Percentage
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-green-400 font-medium">Grade: </span>
-                <span className="bg-white/5 px-3 py-1 rounded-lg text-sm apply-border-sm">
-                  {obtainedMarks >= 91
-                    ? "O"
-                    : obtainedMarks >= 81
-                    ? "A+"
-                    : obtainedMarks >= 71
-                    ? "A"
-                    : obtainedMarks >= 61
-                    ? "B+"
-                    : obtainedMarks >= 56
-                    ? "B"
-                    : obtainedMarks >= 50
-                    ? "C"
-                    : "F"}
-                </span>
-              </div>
+              <LineChart className="w-full h-full -ml-3"
+                xAxis={[{
+                  data: chartData.map(d => d.exam),
+                  scaleType: 'point',
+                  tickLabelStyle: { fill: '#71717a', fontSize: 10 }
+                }]}
+                series={[
+                  {
+                    data: chartData.map(d => d.percentage),
+                    color: '#818cf8', // Indigo 400
+                    area: false,
+                    showMark: true,
+                    valueFormatter: (v) => `${v?.toFixed(1)}%`
+                  },
+                ]}
+
+                yAxis={[{
+                  min: 0,
+                  max: 100,
+                  tickLabelStyle: { fill: '#71717a', fontSize: 10 },
+                }]}
+
+                grid={{ horizontal: true }}
+                sx={{
+                  // Customizing charts styles for dark mode
+                  ".MuiChartsAxis-line": { stroke: "#3f3f46" }, // zinc-700
+                  ".MuiChartsAxis-tick": { stroke: "#3f3f46" },
+                  ".MuiChartsGrid-line": { stroke: "#27272a" }, // zinc-800
+                  ".MuiChartsTooltip-root": { backgroundColor: "#18181b", borderColor: "#3f3f46", color: "#fff" }
+                }}
+                height={280}
+              />
             </div>
-          ) : (
-            // For theory courses (not ending with P)
-            <>
-              <div className="flex items-center gap-2">
-                <input
-                  value={obtainedMarks}
-                  onChange={handleObtainedMarksChange}
-                  className="w-14 bg-white/5 px-2 py-1 rounded-lg text-sm apply-border-sm items-center touch-manipulation text-center"
-                />
-                <span className="text-white/50">|</span>
-                <span>60</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span
-                  className={
-                    isRequiredMarksExceeded ? "text-red-400" : "text-green-400"
-                  }
-                >
-                  {formattedRequiredMarks}
-                </span>
-                <span className="text-white/50">|</span>
-                <span>75</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-green-400 font-medium ">Grade: </span>
-                <select
-                  className="bg-white/5 px-2 py-1 rounded-lg text-sm apply-border-sm items-center appearance-none text-center touch-manipulation"
-                  onChange={handleGradeChange}
-                  value={selectedGrade}
-                >
-                  <option value="O">O</option>
-                  <option value="A+">A+</option>
-                  <option value="A">A</option>
-                  <option value="B+">B+</option>
-                  <option value="B">B</option>
-                  <option value="C">C</option>
-                </select>
-              </div>
-            </>
-          )}
-        </div>
-      )}
-    </div>
+            {/* Detailed Chips */}
+            <div className="grid grid-cols-3 gap-2 mt-4">
+              {chartData.map((d, idx) => (
+                <div key={idx} className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-2 text-center">
+                  <div className="text-[10px] text-blue-300 uppercase tracking-wider mb-1 opacity-70">
+                    {d.exam.replace("Cycle Test", "CT").replace("Model Exam", "Model")}
+                  </div>
+                  <div className="text-sm font-bold text-blue-100">
+                    {d.obtained} <span className="text-[10px] font-normal text-blue-300/60">/ {d.max}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
   );
 };
 
 const MarkData = ({ data }: { data: MarkDetail }) => {
   return (
-    <div className="w-full h-full flex flex-col px-2 text-sm text-white/50 justify-center">
+    <div className="flex flex-col gap-2">
       {data.marks.map((item, i) => {
         return (
-          <div key={i} className="flex gap-2 items-center justify-center ">
-            <div className="w-0.5 h-full bg-green-300/80 " />
-            <div className="flex items-center justify-between p-2 w-full  first:pt-0">
-              <h1 className="w-[60%]">{item.exam}</h1>
-              <div className="flex gap-2 text-white/80">
-                {" "}
-                <h1>{formatNumber(item.obtained ?? 0)}</h1>
-                <span className="text-white/50">|</span>
-                <h1>{formatNumber(item.maxMark ?? 0)}</h1>
-              </div>
+          <div key={i} className="flex justify-between items-center text-xs">
+            <span className="text-zinc-400 truncate max-w-[60%]">{item.exam}</span>
+            <div className="flex gap-1 font-mono">
+              <span className="text-white">{formatNumber(item.obtained ?? 0)}</span>
+              <span className="text-zinc-600">/</span>
+              <span className="text-zinc-500">{formatNumber(item.maxMark ?? 0)}</span>
             </div>
           </div>
         );

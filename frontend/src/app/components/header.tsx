@@ -1,7 +1,7 @@
 import React from "react";
 import { VertexLogo } from "@/components/ui/VertexLogo";
 import { Zen_Dots } from 'next/font/google';
-
+import Link from "next/link";
 const zenDots = Zen_Dots({
   weight: '400',
   subsets: ['latin'],
@@ -18,24 +18,14 @@ const Header = ({ value }: { value: string }) => {
             VERTEX
           </h1>
           <span className="sr-only" aria-live="polite">{value}</span>
-        {/* </div>
-         {value !== "root" ? (
-          <Link
-            href="/"
-            className="px-3 py-1.5 rounded-full apply-border-md bg-white/5 hover:bg-white/10 transition-all"
-          >
-            Back
-          </Link>
-        ) : ( 
-          <Link
-            href="/auth/login"
-            className="px-3 py-1.5 rounded-full apply-border-md bg-white/5 hover:bg-white/10 transition-all"
-          >
-            Login
-          </Link>
-         )}*/}
-         </div>
-      </div> 
+        </div>
+        <Link
+          href="/"
+          className="px-3 py-1.5 rounded-full apply-border-md bg-white/5 hover:bg-white/10 transition-all"
+        >
+          Back
+        </Link>
+      </div>
     </div>
   );
 };

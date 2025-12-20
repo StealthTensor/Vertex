@@ -31,7 +31,7 @@ func CreatePaymentLink(req PaymentLinkRequest) (string, error) {
 
 	callbackURL := os.Getenv("PAYMENT_CALLBACK_URL")
 	if callbackURL == "" {
-		callbackURL = "https://vertex123.vercel.app/app/timetable"
+		callbackURL = "https://vertex123.vercel.app/app/dashboard"
 	}
 
 	amount := 2000

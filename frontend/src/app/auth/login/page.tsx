@@ -15,7 +15,7 @@ const Page = () => {
 
   useEffect(() => {
     const token = Cookies.get("token");
-    if (token) router.replace("/app/timetable");
+    if (token) router.replace("/app/dashboard");
   }, [router]);
 
   return (
@@ -23,7 +23,7 @@ const Page = () => {
       {/* Background */}
       <div className="pointer-events-none absolute inset-0 -z-10">
         <Aurora
-          colorStops={["#FFFFFF", "#C7C7C7", "#3D3D3D"]}
+          colorStops={["#FFFFFF", "#C7C7C7", "#C7C7C7"]}
           amplitude={0.5}
           blend={0.5}
           speed={0.8}

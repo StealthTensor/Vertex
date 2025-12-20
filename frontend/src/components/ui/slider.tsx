@@ -13,7 +13,7 @@ const Slider = React.forwardRef<
     {...props}
   >
     <SliderPrimitive.Track className="relative h-2 w-full grow overflow-hidden rounded-full bg-white/20">
-      <SliderPrimitive.Range className="absolute h-full rounded-full bg-white pr-2" />
+      <SliderPrimitive.Range className="absolute h-full rounded-full bg-zinc-400 pr-2" />
       <div className="absolute top-0.5 flex w-full justify-between">
         {[...Array(6)].map((_, index) =>
           index === 0 || index === 5 ? (

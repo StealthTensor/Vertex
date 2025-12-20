@@ -133,18 +133,17 @@ export default function GradeCalculator({
         <section id="links" className="flex flex-col gap-6">
           <h1 className="text-3xl font-semibold text-white">GradeX</h1>
 
-          <div className="flex flex-col gap-6 rounded-3xl border border-white/10 p-2">
+          <div className="flex flex-col gap-6 rounded-3xl border border-white/10 p-2 mb-[80px] lg:mb-2">
             {marks?.length ? (
               <>
-                <div className="hidden w-full items-center justify-center lg:flex">
+                <div className="w-full items-center justify-center lg:flex">
                   <h2
-                    className={`rounded-2xl border px-8 py-4 text-center text-5xl font-semibold ${
-                      sgpa > 8.5
-                        ? "border-transparent bg-green-400/20 text-green-400"
-                        : sgpa < 6
-                          ? "border-dashed border-red-400 bg-red-400/20 text-red-400"
-                          : "border border-white/20 bg-white/5 text-white"
-                    }`}
+                    className={`rounded-2xl border px-8 py-4 text-center text-5xl font-semibold ${sgpa > 8.5
+                      ? "border-transparent bg-green-400/20 text-green-400"
+                      : sgpa < 6
+                        ? "border-dashed border-red-400 bg-red-400/20 text-red-400"
+                        : "border border-white/20 bg-white/5 text-white"
+                      }`}
                   >
                     {sgpa} <span className="text-base opacity-40">SGPA</span>
                   </h2>
@@ -179,19 +178,6 @@ export default function GradeCalculator({
                     </div>
                   </>
                 )}
-                <div className="sticky bottom-4 flex items-center justify-center lg:hidden">
-                  <h2
-                    className={`rounded-full px-6 py-3 text-center text-3xl font-semibold shadow-xl ${
-                      sgpa > 8.5
-                        ? "bg-green-400/20 text-green-400"
-                        : sgpa < 6
-                          ? "border border-dashed border-red-400 bg-red-400/20 text-red-400"
-                          : "border border-white/20 bg-white/5 text-white"
-                    }`}
-                  >
-                    {sgpa} <span className="text-sm opacity-40">SGPA</span>
-                  </h2>
-                </div>
               </>
             ) : (
               <></>

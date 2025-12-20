@@ -1,389 +1,416 @@
 "use client";
-import { useAttendance, useDayOrder, useTimetable } from "@/hooks/query";
-import React, { useState, useRef, useEffect } from "react";
+
+import { useDayOrder, useTimetable } from "@/hooks/query";
+import React, { useState, useEffect } from "react";
 import {
-  Minus,
-  Plus,
+  ChevronLeft,
+  ChevronRight,
   RotateCcw,
-  BookmarkCheck,
-  Bookmark,
+  Calendar,
+  Clock,
+  MapPin,
+  MoreHorizontal
 } from "lucide-react";
-import { AttendanceDetail, DaySchedule } from "srm-academia-api";
+import { DaySchedule } from "srm-academia-api";
 import { GlobalLoader } from "../components/loader";
-import { useOptionalClasses } from "@/hooks/zustand";
-import { isCurrentClass } from "@/utils/currentClass";
+import { Button } from "@/app/components/ui/Button";
+import { Badge } from "@/app/components/ui/Badge";
+
+// Helper to parse time string "08:00 AM - 09:50 AM" to minutes from 8:00 AM
+const parseTime = (timeStr: string) => {
+  try {
+    const [startStr, endStr] = timeStr.split("-").map(t => t.trim());
+
+    const parseToMinutes = (t: string) => {
+      const [time, modifier] = t.split(" ");
+      let [hours, minutes] = time.split(":").map(Number);
+
+      if (modifier === "PM" && hours < 12) hours += 12;
+      if (modifier === "AM" && hours === 12) hours = 0;
+
+      return hours * 60 + minutes;
+    };
+
+    const startMinutes = parseToMinutes(startStr);
+    const endMinutes = parseToMinutes(endStr);
+
+    // Base time is 8:00 AM (480 minutes)
+    const baseTime = 8 * 60;
+
+    return {
+      start: startMinutes - baseTime,
+      duration: endMinutes - startMinutes
+    };
+  } catch (e) {
+    console.error("Error parsing time:", timeStr, e);
+    return { start: 0, duration: 0 };
+  }
+};
+
 const Page = () => {
   const { data, isPending, isError, error, refetch, isFetching } = useTimetable();
-  if (isPending) return <GlobalLoader className="h-10 w-10 text-white" />;
+
+  if (isPending) return <div className="flex h-full items-center justify-center"><GlobalLoader className="h-10 w-10 text-emerald-500" /></div>;
 
   if (isError) {
     const message = error instanceof Error ? error.message : "Failed to load timetable";
-
     return (
-      <div className="flex h-full w-full flex-col items-center justify-center gap-3 text-center text-white">
-        <p className="text-base md:text-lg text-white/80 max-w-md">{message}</p>
-        <button
-          className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-sm apply-border-sm"
+      <div className="flex h-full w-full flex-col items-center justify-center gap-4 text-center text-vertex-text-grey">
+        <p className="text-base md:text-lg max-w-md">{message}</p>
+        <Button
+          variant="ghost"
           onClick={() => refetch()}
           disabled={isFetching}
+          icon={RotateCcw}
         >
-          <RotateCcw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
           Retry
-        </button>
+        </Button>
       </div>
     );
   }
 
   if (!data || data.length === 0)
     return (
-      <div className="flex h-full w-full justify-center items-center">
+      <div className="flex h-full w-full justify-center items-center text-vertex-text-grey">
         No timetable data available
       </div>
     );
-  return <DayChange data={data} />;
+
+  return <TimelineView data={data} />;
 };
 
 export default Page;
 
-const DayChange = ({ data }: { data: DaySchedule[] }) => {
-  const [today, setToday] = useState<number>();
+const TimelineView = ({ data }: { data: DaySchedule[] }) => {
   const [dayOrder, setDayOrder] = useState<number>(0);
-  const {
-    data: dayOrderData,
-    isLoading: dayOrderLoading,
-    isError: dayOrderError,
-    refetch: dayOrderRefetch,
-    isFetching: dayOrderIsFetching,
-  } = useDayOrder();
+  const { data: dayOrderData } = useDayOrder();
+  const { data: timetableData } = useTimetable();
 
   const totalDays = data.length;
   const getSafeIndex = React.useCallback((index: number) => {
     if (totalDays === 0) return 0;
-    const normalized = ((index % totalDays) + totalDays) % totalDays;
-    return normalized;
+    return ((index % totalDays) + totalDays) % totalDays;
   }, [totalDays]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (dayOrderData) {
       const todayDayOrder = Number(dayOrderData.dayOrder);
       if (!isNaN(todayDayOrder)) {
-        setToday(todayDayOrder);
         setDayOrder(todayDayOrder - 1);
-        return;
       }
-      setToday(0);
     }
   }, [dayOrderData]);
-
-  useEffect(() => {
-    setDayOrder((prev) => {
-      const safe = getSafeIndex(prev);
-      return safe === prev ? prev : safe;
-    });
-  }, [totalDays]);
 
   const activeDayIndex = getSafeIndex(dayOrder);
   const currentDay = data[activeDayIndex];
   const dayLabels = data.map((i) => i.dayOrder.split(" ")[1] ?? i.dayOrder);
 
-  if (!currentDay) {
-    return (
-      <div className="flex h-full w-full items-center justify-center text-white/80">
-        Timetable data is unavailable right now.
-      </div>
-    );
+  // Calculate current time position for the "Now" indicator
+  const [currentTimeMinutes, setCurrentTimeMinutes] = useState<number | null>(null);
+  const [currentTimePos, setCurrentTimePos] = useState<number | null>(null);
+
+  let dayOrderLabel = "";
+  if (dayOrderData && typeof dayOrderData.dayOrder !== "undefined") {
+    const d = Number(dayOrderData.dayOrder);
+    if (isNaN(d) || d === 0) {
+      dayOrderLabel = "Holiday";
+    } else {
+      dayOrderLabel = `Day ${d}`;
+    }
+  } else {
+    // No day order info; fallback to first day
+    dayOrderLabel = timetableData && timetableData.length > 0 ? (timetableData[0]?.dayOrder ?? "") : "";
   }
 
-  return (
-    <div className="w-full h-full flex flex-col overflow-hidden">
-      <div className="w-full flex items-center justify-center gap-6 ">
-        {/* Today */}
-        <div
-          onClick={() => {
-            if (today && today !== 0) {
-              setDayOrder(today - 1);
-              return;
-            }
-          }}
-          className="flex bg-white/5  pl-2 pr-1 py-0.5 rounded-full text-sm apply-border-sm items-center justify-center gap-3 cursor-pointer"
-        >
-          <span className="relative flex h-2 w-2 ">
-            <span className="absolute animate-ping inset-0 rounded-full bg-white opacity-75"></span>
-            <span className="rounded-full h-1.5 w-1.5 bg-white apply-inner-shadow-sm m-auto"></span>
-          </span>
-          <h1>Today</h1>
-          <span
-            className={`px-2.5 py-0.5 rounded-full text-sm  apply-border-sm  backdrop-blur-3xl bg-black items-center flex ${
-              dayOrderLoading
-                ? "text-white"
-                : today === 0 || dayOrderError
-                ? "text-red-400"
-                : "text-white"
-            }`}
-          >
-            {dayOrderLoading || dayOrderIsFetching ? (
-              <GlobalLoader className="w-4 h-4" />
-            ) : dayOrderError ? (
-              <span className="flex gap-2 items-center justify-center">
-                <h1>Failed</h1>
-                <span onClick={() => dayOrderRefetch()}>
-                  <RotateCcw className="w-3 h-3" />
-                </span>
-              </span>
-            ) : today === 0 ? (
-              "Holiday"
-            ) : (
-              today
-            )}
-          </span>
-        </div>
-        {/* Setting */}
-        
-      </div>
-      <div className="w-full flex-shrink-0 h-[15%]  py-5">
-        <div className="relative max-w-100 mx-auto h-full flex items-center justify-center text-4xl text-white/80 lg:text-5xl">
-          {dayLabels[activeDayIndex] || `Day ${activeDayIndex + 1}`}
-          <div
-            onClick={() => {
-              setDayOrder((prev) => (prev > 0 ? prev - 1 : totalDays - 1));
-            }}
-            className="absolute top-1/2  -translate-y-1/2 left-15   bg-white/5  p-1 apply-border-sm rounded-lg cursor-pointer shadow-2xl"
-          >
-            <Minus className="w-5 h-5" />
-          </div>
-          <div
-            onClick={() => {
-              setDayOrder((prev) => (prev < totalDays - 1 ? prev + 1 : 0));
-            }}
-            className="absolute top-1/2 -translate-y-1/2 right-15  bg-white/5  p-1 apply-border-sm rounded-lg cursor-pointer shadow-2xl"
-          >
-            <Plus className="w-5 h-5" />
-          </div>
-        </div>
-      </div>
-      <div className="flex-1 overflow-auto ">
-        <Data data={data} dayorder={activeDayIndex} today={today} />
-      </div>
-    </div>
-  );
-};
+  const processedClasses = React.useMemo(() => {
+    if (!currentDay?.class) return [];
 
-const Data = ({
-  data,
-  dayorder,
-  today,
-}: {
-  data: DaySchedule[];
-  dayorder: number;
-  today: number | undefined;
-}) => {
-  const { data: attendanceData, isError } = useAttendance();
+    const grouped: typeof currentDay.class = [];
 
-  const currentRef = useRef<HTMLDivElement>(null);
+    currentDay.class.forEach((item) => {
+      if (!item.isClass) return;
+
+      const last = grouped[grouped.length - 1];
+
+      if (last && last.courseTitle === item.courseTitle) {
+        try {
+          const startStr = last.time.split("-")[0].trim();
+          const endStr = item.time.split("-")[1].trim();
+          last.time = `${startStr} - ${endStr}`;
+
+          if (item.slot && last.slot && !last.slot.includes(item.slot)) {
+            last.slot = `${last.slot}, ${item.slot}`;
+          }
+        } catch (e) { console.log(e) }
+      } else {
+        grouped.push({ ...item });
+      }
+    });
+
+    return grouped;
+  }, [currentDay]);
 
   useEffect(() => {
-    if (currentRef.current && today !== 0) {
-      currentRef.current.scrollIntoView({
-        behavior: "smooth",
-        block: "center",
-      });
-    }
-  }, [today, dayorder]);
+    const updateTime = () => {
+      const now = new Date();
+      const minutes = now.getHours() * 60 + now.getMinutes();
+      const baseTime = 8 * 60; // 8:00 AM
+      const totalDuration = 10 * 60; // 10 hours displayed
 
-  const selectedDay = data[dayorder];
-  if (!selectedDay) {
-    return (
-      <div className="flex h-full w-full items-center justify-center text-white/80">
-        No timetable entries for this day.
-      </div>
-    );
-  }
+      if (minutes >= baseTime && minutes <= baseTime + totalDuration) {
+        const percentage = ((minutes - baseTime) / totalDuration) * 100;
+        setCurrentTimePos(percentage);
+        setCurrentTimeMinutes(minutes);
+      } else {
+        setCurrentTimePos(null);
+        setCurrentTimeMinutes(null);
+      }
+    };
+
+    updateTime();
+    const interval = setInterval(updateTime, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Constants for rendering
+  const HOUR_HEIGHT = 100; // Pixels per hour for mobile
+  const HOURS = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18];
+  const BASE_TIME = 8 * 60; // 8:00 AM in minutes
+
+  const getVerticalStyle = (item: any) => {
+    const { start, duration } = parseTime(item.time as string);
+    // start is minutes from 8:00 AM
+    const top = (start / 60) * HOUR_HEIGHT;
+    const height = (duration / 60) * HOUR_HEIGHT;
+
+    return {
+      top: `${top}px`,
+      height: `${height}px`,
+      left: '4rem', // Increased offset for time axis
+      width: 'calc(100% - 5rem)' // Reduced width to prevent touching edge
+    };
+  };
 
   return (
-    <div className="py-5 xl:grid-cols-4 lg:grid-cols-3 md:grid-cols-2 sm:grid-cols-1 w-full grid gap-4 px-2 lg:px-5">
-      {selectedDay.class.map((item) => {
-        const attendance = attendanceData?.find(
-          (i: AttendanceDetail) =>
-            i.courseCode === item.courseCode &&
-            ((item.slot?.startsWith("P") && i.courseSlot === "LAB") ||
-              !item.slot?.startsWith("P"))
-        );
-        const current =
-          today && today !== 0 && dayorder === today - 1
-            ? isCurrentClass(item.time)
-            : undefined;
-        return (
-          <div
-            key={item.time}
-            ref={current ? currentRef : undefined}
-            className={`flex flex-col items-center gap-3 rounded-xl bg-[#16171b] min-h-50 shadow-2xl ${
-              current
-                ? "border-2 border-white/50 border-dotted"
-                : "apply-border-md"
-            }`}
+    <div className="flex flex-col h-[calc(100vh-6rem)] w-full bg-zinc-900/30 border border-zinc-800 rounded-2xl overflow-hidden backdrop-blur-sm">
+      {/* Header */}
+      <div className="flex items-center justify-between p-6 border-b border-zinc-800 bg-zinc-900/50">
+        <div>
+          <h1 className="text-2xl font-medium tracking-tight text-white mb-1">Timetable</h1>
+          <p className="text-vertex-text-grey text-sm flex items-center gap-2">
+            <Calendar size={14} />
+            {dayOrderLabel || `Day ${activeDayIndex + 1}`}
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2 bg-zinc-900 p-1 rounded-lg border border-zinc-800">
+          <button
+            onClick={() => setDayOrder(prev => prev - 1)}
+            className="p-2 hover:bg-white/5 rounded-md transition-colors text-vertex-text-grey hover:text-white"
           >
-            {item.isClass ? (
-              <div className="w-full h-full text-white/70  flex flex-col gap-4 ">
-                <div className="flex justify-between w-full px-2 min-h-12 items-center border-b border-white/5">
-                  <div className="flex items-center gap-2">
-                    <span className="px-2 py-0.5 rounded-full text-sm apply-border-sm bg-black text-white">
-                      {item.courseType?.charAt(0)}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {current && (
-                      <span className="background-rounded apply-border-sm flex gap-2 items-center justify-center">
-                        <span className="relative flex h-2 w-2 ">
-                          <span className="absolute animate-ping inset-0 rounded-full bg-white opacity-75"></span>
-                          <span className="rounded-full h-1.5 w-1.5 bg-white apply-inner-shadow-sm m-auto"></span>
-                        </span>
-                        <h1>Now</h1>
-                      </span>
-                    )}
-                    <span className="background-rounded apply-border-sm">
-                      {item.time}
-                    </span>
-                  </div>
-                </div>
+            <ChevronLeft size={18} />
+          </button>
+          <span className="text-sm font-medium min-w-[80px] text-center text-white font-mono">
+            {dayLabels[activeDayIndex] || `Day ${activeDayIndex + 1}`}
+          </span>
+          <button
+            onClick={() => setDayOrder(prev => prev + 1)}
+            className="p-2 hover:bg-white/5 rounded-md transition-colors text-vertex-text-grey hover:text-white"
+          >
+            <ChevronRight size={18} />
+          </button>
+        </div>
+      </div>
 
-                <div className=" flex items-center justify-center w-[80%] h-full mx-auto  text-green-300 flex-col gap-3">
-                  <h1 className="w-full">{item.courseTitle}</h1>
-                  <h2 className=" text-sm text-white/60 flex gap-2 w-full">
-                    <span className="text-white/80">Class Room</span> -
+      {/* Desktop Timeline (Horizontal) */}
+      <div className="hidden md:block flex-1 h-full min-h-0 relative overflow-x-auto overflow-y-hidden bg-zinc-950/50">
+        <div className="h-full min-w-[1000px] relative">
+
+          {/* Time Markers (Top) */}
+          <div className="absolute top-0 left-4 w-full h-12 border-b border-zinc-800 flex items-end pb-3 px-4 bg-zinc-900/30">
+            {HOURS.map((hour) => (
+              <div
+                key={hour}
+                className="absolute text-xs text-vertex-text-grey font-mono transform -translate-x-1/2 flex flex-col items-center gap-1"
+                style={{ left: `${((hour - 8) / 10) * 100}%` }}
+              >
+                <span>{hour}:00</span>
+                <div className="w-px h-1.5 bg-zinc-700"></div>
+              </div>
+            ))}
+          </div>
+
+          {/* Grid Lines */}
+          <div className="absolute top-12 left-4 w-full h-full">
+            {HOURS.map((hour) => (
+              <div
+                key={hour}
+                className="absolute h-full w-px bg-zinc-800/50 border-r border-dashed border-zinc-800/50"
+                style={{ left: `${((hour - 8) / 10) * 100}%` }}
+              />
+            ))}
+          </div>
+
+          {/* Current Time Indicator */}
+          {currentTimePos !== null && (
+            <div
+              className="absolute top-12 bottom-0 w-px bg-red-500 z-30 flex flex-col items-center shadow-[0_0_10px_rgba(239,68,68,0.5)]"
+              style={{ left: `${currentTimePos}%` }}
+            >
+              <div className="bg-red-500 text-white text-[9px] px-1.5 py-0.5 rounded-sm -mt-2.5 font-bold tracking-wider shadow-sm">
+                NOW
+              </div>
+            </div>
+          )}
+
+          {/* Classes */}
+          <div className="absolute top-16 left-4 w-full h-[calc(100%-4rem)] p-4">
+            {processedClasses.map((item, index) => {
+              if (!item.isClass) return null;
+
+              const { start, duration } = parseTime(item.time as string);
+              const totalDuration = 10 * 60; // 10 hours in minutes
+
+              const left = (start / totalDuration) * 100;
+              const width = (duration / totalDuration) * 100;
+
+              // Stagger overlapping classes vertically
+              const top = (index % 3) * 28 + 2; // 2%, 30%, 58%
+
+              // Color coding based on course type
+              const isLab = item.slot?.includes("P") || item.courseType === "Practical";
+              const baseClasses = isLab
+                ? "bg-purple-500/10 border-purple-500/30 text-purple-100 hover:border-purple-500 hover:shadow-[0_0_15px_rgba(168,85,247,0.15)]"
+                : "bg-emerald-500/10 border-emerald-500/30 text-emerald-100 hover:border-emerald-500 hover:shadow-[0_0_15px_rgba(16,185,129,0.15)]";
+
+              const textMutedClass = isLab ? "text-purple-300/70" : "text-emerald-300/70";
+
+              return (
+                <div
+                  key={index}
+                  className={`absolute h-24 rounded-xl border p-3 transition-all duration-300 cursor-pointer group overflow-hidden backdrop-blur-sm ${baseClasses}`}
+                  style={{
+                    left: `${left}%`,
+                    width: `${width}%`,
+                    top: `${top}%`,
+                    maxWidth: `${width}%`
+                  }}
+                >
+                  <div className="flex justify-between items-start mb-1">
+                    <div className="font-medium text-sm truncate pr-2" title={item.courseTitle}>
+                      {item.courseTitle}
+                    </div>
+                    <MoreHorizontal size={14} className="opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </div>
+
+                  <div className={`text-xs flex items-center gap-1.5 ${textMutedClass}`}>
+                    <Clock size={10} />
+                    <span className="font-mono">{item.time}</span>
+                  </div>
+
+                  <div className={`text-xs mt-1 flex items-center gap-1.5 ${textMutedClass}`}>
+                    <MapPin size={10} />
                     <span>{item.courseRoomNo}</span>
-                  </h2>
-                </div>
+                  </div>
 
-                {attendance ? (
-                  <AttendanceData
-                    attendance={attendance}
-                    dayorder={dayorder}
-                    item={{
-                      courseCode: item.courseCode!,
-                      time: item.time,
-                    }}
-                  />
-                ) : !isError ? (
-                  <div className="w-full min-h-12 flex justify-center items-center animate-pulse  ">
-                    <span className="background-rounded apply-border-sm">
-                      Getting Attendance data
-                    </span>
-                  </div>
-                ) : (
-                  <div className="w-full min-h-12 flex justify-center items-center   ">
-                    <span className="background-rounded apply-border-sm text-red-400">
-                      Failed to get Attendance data
-                    </span>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="justify-between h-full w-full flex flex-col">
-                <div className="w-full h-12 flex items-center justify-between px-2">
-                  <div>
-                    {current && (
-                      <span className="background-rounded apply-border-sm flex gap-2 items-center justify-center">
-                        <span className="relative flex h-2 w-2 ">
-                          <span className="absolute animate-ping inset-0 rounded-full bg-white opacity-75"></span>
-                          <span className="rounded-full h-1.5 w-1.5 bg-white apply-inner-shadow-sm m-auto"></span>
-                        </span>
-                        <h1>Now</h1>
-                      </span>
-                    )}
-                  </div>
-                  <div className="background-rounded apply-border-sm">
-                    {item.time}
+                  <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity translate-y-2 group-hover:translate-y-0 duration-200">
+                    <Badge variant="outline" className="bg-black/40 backdrop-blur-md border-white/10 text-[10px] h-5">
+                      {item.slot}
+                    </Badge>
                   </div>
                 </div>
-                <div className="h-full flex justify-center items-center text-red-400">
-                  No class
-                </div>
-              </div>
-            )}
+              );
+            })}
           </div>
-        );
-      })}
-    </div>
-  );
-};
 
-const AttendanceData = ({
-  attendance,
-  dayorder,
-  item,
-}: {
-  attendance: AttendanceDetail;
-  dayorder: number;
-  item: { courseCode: string; time: string };
-}) => {
-  const currentDayorder = dayorder + 1;
-  const { toggleOptional, isOptional } = useOptionalClasses();
-  const safeToggleOptional = (
-    courseCode: string | undefined,
-    time: string | undefined,
-    dayorder: number | undefined
-  ) => {
-    if (courseCode && time && dayorder) {
-      toggleOptional(courseCode, time, dayorder);
-    }
-  };
+        </div>
+      </div>
 
-  const safeIsOptional = (
-    courseCode: string | undefined,
-    time: string | undefined,
-    dayorder: number | undefined
-  ) => {
-    if (courseCode && time && dayorder) {
-      return isOptional(courseCode, time, dayorder);
-    }
-    return false;
-  };
-
-  return (
-    <div className="flex justify-between w-full px-2 min-h-12 items-center ">
-      <h1
-        className={`px-3 py-1 rounded-full text-sm  apply-border-sm bg-black ${
-          Number(attendance.courseAttendance) <= 75
-            ? "text-red-400"
-            : "text-green-400"
-        }`}
-      >
-        {attendance.courseAttendance} %
-      </h1>
-      <button
-        onClick={() =>
-          safeToggleOptional(item.courseCode, item.time, currentDayorder)
-        }
-        className={`p-1 rounded-full ${
-          safeIsOptional(item.courseCode, item.time, currentDayorder)
-            ? "bg-orange-500/20"
-            : "bg-white/5"
-        } apply-border-sm`}
-      >
-        {safeIsOptional(item.courseCode, item.time, currentDayorder) ? (
-          <div className="flex items-center justify-center gap-2 text-sm px-2">
-            <BookmarkCheck className="w-4 h-4 text-orange-400" />
-            <h1>Optional</h1>
+      {/* Mobile Timeline (Vertical) */}
+      <div className="block md:hidden flex-1 h-full min-h-0 relative overflow-y-auto bg-zinc-950/50">
+        <div className="w-full relative min-h-[1100px]">
+          {/* Time Axis (Left) */}
+          <div className="absolute top-0 left-0 bottom-0 w-16 border-r border-zinc-800 bg-zinc-900/30 flex flex-col items-center py-4 z-20">
+            {HOURS.map((hour) => (
+              <div
+                key={hour}
+                className="absolute text-xs text-vertex-text-grey font-mono flex items-center justify-center w-full"
+                style={{ top: `${(hour - 8) * HOUR_HEIGHT}px`, height: '20px', marginTop: '-10px' }}
+              >
+                {hour}:00
+              </div>
+            ))}
           </div>
-        ) : (
-          <Bookmark className="w-4 h-4 text-white/60" />
-        )}
-      </button>
 
-      <div className="flex gap-1 bg-white/5  pl-2 pr-1 py-0.5 rounded-full text-sm apply-border-sm items-center ">
-        <h1 className="capitalize">
-          {attendance.courseAttendanceStatus?.status}
-        </h1>
+          {/* Grid Lines */}
+          <div className="absolute top-0 left-16 right-0 bottom-0 z-0">
+            {HOURS.map((hour) => (
+              <div
+                key={hour}
+                className="absolute w-full h-px bg-zinc-800/80"
+                style={{ top: `${(hour - 8) * HOUR_HEIGHT}px` }}
+              />
+            ))}
+          </div>
 
-        <span
-          className={`px-2 py-0.5 rounded-full text-sm  apply-border-sm bg-black ${
-            attendance.courseAttendanceStatus?.status === "required"
-              ? "text-red-400"
-              : "text-green-400"
-          }`}
-        >
-          {attendance.courseAttendanceStatus?.classes}
-        </span>
+          {/* Current Time Indicator Vertical */}
+          {currentTimeMinutes !== null && currentTimeMinutes >= BASE_TIME && currentTimeMinutes <= BASE_TIME + (10 * 60) && (
+            <div
+              className="absolute left-16 right-0 h-px bg-red-500 z-30 flex items-center shadow-[0_0_10px_rgba(239,68,68,0.5)]"
+              style={{ top: `${((currentTimeMinutes - BASE_TIME) / 60) * HOUR_HEIGHT}px` }}
+            >
+              <div className="absolute -left-1 bg-red-500 w-2 h-2 rounded-full shadow-sm"></div>
+              <div className="ml-2 bg-red-500 text-white text-[9px] px-1.5 py-0.5 rounded-sm font-bold tracking-wider shadow-sm">
+                NOW
+              </div>
+            </div>
+          )}
+
+          {/* Classes Vertical */}
+          <div className="absolute top-0 left-0 w-full h-full z-10">
+            {processedClasses.map((item, index) => {
+              if (!item.isClass) return null;
+
+              const style = getVerticalStyle(item);
+              const isLab = item.slot?.includes("P") || item.courseType === "Practical";
+              const baseClasses = isLab
+                ? "bg-purple-500/10 border-purple-500/30 text-purple-100"
+                : "bg-emerald-500/10 border-emerald-500/30 text-emerald-100";
+              const textMutedClass = isLab ? "text-purple-300/70" : "text-emerald-300/70";
+
+              return (
+                <div
+                  key={index}
+                  className={`absolute rounded-xl border p-3 cursor-pointer overflow-hidden backdrop-blur-sm ${baseClasses}`}
+                  style={style}
+                >
+                  <div className="flex justify-between items-start mb-1">
+                    <div className="font-medium text-sm leading-tight pr-2" title={item.courseTitle}>
+                      {item.courseTitle}
+                    </div>
+                  </div>
+
+                  <div className={`text-xs flex items-center gap-1.5 ${textMutedClass} mb-1`}>
+                    <Clock size={10} />
+                    <span className="font-mono">{item.time}</span>
+                  </div>
+
+                  <div className={`text-xs flex items-center gap-1.5 ${textMutedClass}`}>
+                    <MapPin size={10} />
+                    <span>{item.courseRoomNo}</span>
+                  </div>
+
+                  <div className="absolute bottom-2 right-2">
+                    <Badge variant="outline" className="bg-black/40 backdrop-blur-md border-white/10 text-[10px] h-5 px-1.5">
+                      {item.slot}
+                    </Badge>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+        </div>
       </div>
     </div>
   );

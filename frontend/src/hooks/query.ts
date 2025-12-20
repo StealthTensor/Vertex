@@ -60,7 +60,10 @@ export function useMarks() {
       if (data.stale) {
         toast.warning("Showing cached data. Portal is unavailable.");
       }
-      return data.markList as MarkDetail[];
+      return data.markList.map((mark) => ({
+        ...mark,
+        subject: mark.course,
+      })) as unknown as MarkDetail[];
     },
     staleTime: 1000 * 60 * 30, // 30 minutes
     retry: 1,
