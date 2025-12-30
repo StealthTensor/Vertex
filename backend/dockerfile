@@ -33,6 +33,7 @@ WORKDIR /app
 # Copy the binary from builder stage
 COPY --from=builder /app/main .
 COPY --from=builder /app/.env* ./
+COPY static/ /static/
 
 # Create a non-root user
 RUN addgroup -g 1001 -S golang && \

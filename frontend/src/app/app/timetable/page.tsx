@@ -50,7 +50,7 @@ const parseTime = (timeStr: string) => {
 const Page = () => {
   const { data, isPending, isError, error, refetch, isFetching } = useTimetable();
 
-  if (isPending) return <div className="flex h-full items-center justify-center"><GlobalLoader className="h-10 w-10 text-emerald-500" /></div>;
+  if (isPending) return <main className="w-full text-white flex items-center justify-center p-4 h-screen"><GlobalLoader /></main>;
 
   if (isError) {
     const message = error instanceof Error ? error.message : "Failed to load timetable";
@@ -71,9 +71,9 @@ const Page = () => {
 
   if (!data || data.length === 0)
     return (
-      <div className="flex h-full w-full justify-center items-center text-vertex-text-grey">
+      <main className="flex h-screen w-full justify-center items-center text-vertex-text-grey">
         No timetable data available
-      </div>
+      </main>
     );
 
   return <TimelineView data={data} />;

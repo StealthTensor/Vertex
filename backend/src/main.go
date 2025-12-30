@@ -50,7 +50,7 @@ func main() {
 		log.Printf("Using configured PORT=%s", port)
 	}
 
-	indexFile := filepath.Join(staticDir, "index.html")
+	indexFile := filepath.Join(staticDir, "admin.html")
 	ensureStaticIndex(indexFile)
 
 	app := fiber.New(fiber.Config{
@@ -459,6 +459,7 @@ func main() {
 		Browse:        false,
 		CacheDuration: 24 * time.Hour,
 		MaxAge:        86400,
+		Index:         "admin.html",
 	})
 
 	log.Printf("Starting server on port %s...", port)

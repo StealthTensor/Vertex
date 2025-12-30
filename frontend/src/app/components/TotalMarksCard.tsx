@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "motion/react";
-import { ArrowBigUpDash, X } from "lucide-react";
+import { X } from "lucide-react";
 import { RadarChart } from "@mui/x-charts/RadarChart";
 import { MarkDetail } from "srm-academia-api";
 import { Card } from "@/app/components/ui/Card";
@@ -104,26 +104,21 @@ export const TotalMarksCard = ({ marks = [], className = "" }: TotalMarksCardPro
                 whileHover={{ scale: 0.98 }}
                 whileTap={{ scale: 0.95 }}
             >
-                <Card className="h-full relative overflow-hidden group bg-zinc-900/20 border-zinc-800/50 backdrop-blur-md transition-all hover:bg-zinc-900/40 hover:border-zinc-700">
-                    <div className="p-4 sm:p-6 h-full flex flex-col justify-between">
-                        <div className="absolute top-0 right-0 p-4 sm:p-6 opacity-5 group-hover:opacity-10 transition-opacity pointer-events-none">
-                            <ArrowBigUpDash size={80} className="sm:size-100" />
-                        </div>
-
+                <Card className="h-full relative overflow-hidden group bg-[#121315] border-white/5 backdrop-blur-md transition-all hover:border-white/10">
+                    <div className="p-5 sm:p-6 h-full flex flex-col justify-between">
                         <div className="relative z-10">
-                            <div className="flex justify-between items-start mb-4 sm:mb-6">
-                                <h3 className="text-zinc-400 text-xs font-bold uppercase tracking-widest">Performance</h3>
+                            <div className="flex justify-between items-start mb-4">
+                                <h3 className="text-[#8A8F98] text-[11px] font-medium uppercase tracking-[0.1em]">Performance</h3>
                             </div>
-                            <div className="mt-8 sm:mt-10">
-                                <div className="flex items-baseline gap-1 mb-2 sm:mb-3">
-                                    <span className="text-4xl sm:text-5xl font-medium text-white tracking-tighter font-display">{formatNumber(totalMarks, 1)}</span>
-                                    <span className="text-sm sm:text-lg text-zinc-500">/ </span>
-                                    <span className="text-sm sm:text-lg text-emerald-500">{formatNumber(maxMarks, 0)}</span>
+                            <div className="mt-8">
+                                <div className="flex items-baseline gap-1.5 mb-2">
+                                    <span className="text-3xl sm:text-4xl font-medium text-[#EDEDED] tracking-tight font-display">{formatNumber(totalMarks, 1)}</span>
+                                    <span className="text-sm text-[#8A8F98]">/ {formatNumber(maxMarks, 0)}</span>
                                 </div>
 
-                                <div className="w-full bg-zinc-800/50 rounded-full h-1.5 overflow-hidden">
+                                <div className="w-full bg-zinc-800/30 rounded-full h-1 overflow-hidden">
                                     <div
-                                        className="bg-emerald-500 h-full rounded-full shadow-[0_0_10px_rgba(16,185,129,0.3)]"
+                                        className="bg-white/50 h-full rounded-full shadow-[0_0_10px_rgba(16,185,129,0.3)]"
                                         style={{ width: `${maxMarks > 0 ? (totalMarks / maxMarks) * 100 : 0}%` }}
                                     ></div>
                                 </div>

@@ -10,7 +10,7 @@ import Link from "next/link";
 
 const Page = () => {
   const { data, isPending } = useUserInfo();
-  if (isPending) return <GlobalLoader className="h-10 w-10 text-white" />;
+  if (isPending) return <main className="w-full text-white flex items-center justify-center p-4 h-screen"><GlobalLoader /></main>;
   if (!data)
     return (
       <div className="flex h-full w-full justify-center items-center text-zinc-500">
@@ -33,7 +33,7 @@ const Data = ({ data }: { data: UserInfo }) => {
     .toUpperCase();
 
   return (
-    <main className="min-h-screen w-full bg-zinc-950 text-white overflow-y-auto pb-20">
+    <main className="min-h-screen w-full text-white overflow-y-auto pb-20">
       <div className="max-w-md mx-auto px-4 py-8 sm:py-12 flex flex-col items-center gap-8">
         <div className="absolute top-6 left-6 bg-zinc-900/50 p-3 rounded-full border border-zinc-800"><Link href="/app/settings"><ChevronLeft size={24} /></Link></div>
         {/* Profile Header */}

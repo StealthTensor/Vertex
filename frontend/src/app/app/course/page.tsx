@@ -11,12 +11,12 @@ import Link from "next/link";
 
 const Page = () => {
   const { data, isPending } = useCourse();
-  if (isPending) return <GlobalLoader className="h-10 w-10 text-white" />;
+  if (isPending) return <main className="w-full text-white flex items-center justify-center p-4 h-screen"><GlobalLoader /></main>;
   if (!data || data.length === 0)
     return (
-      <div className="flex h-full w-full justify-center items-center text-zinc-500">
+      <main className="flex h-screen w-full justify-center items-center text-zinc-500">
         No course data found
-      </div>
+      </main>
     );
 
   return (
@@ -24,8 +24,7 @@ const Page = () => {
       <div className="absolute top-6 left-6 bg-zinc-900/50 p-3 rounded-full border border-zinc-800"><Link href="/app/settings"><ChevronLeft size={24} /></Link></div>
       <div className="flex items-center gap-2 mb-2 mt-10">
         <Book size={20} className="text-emerald-500" />
-        <h1 className="text-2xl font-semibold text-white tracking-tight">Registered Courses</h1>
-        <Badge className="bg-zinc-800 text-zinc-400 ml-2">{data.length}</Badge>
+        <h1 className="text-xl font-semibold text-white tracking-tight">Your Courses</h1>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -58,11 +57,9 @@ const Data = ({ data }: { data: CourseDetail[] }) => {
                   {item.courseTitle}
                 </h3>
               </div>
-              <div className="flex flex-col items-end shrink-0">
-                <span className="text-xs text-zinc-500 mb-1">Credits</span>
-                <div className="flex items-center justify-center w-8 h-8 rounded-full bg-zinc-900 border border-zinc-700 text-white font-bold text-sm">
-                  {item.courseCredit}
-                </div>
+              <div className="inline-flex items-center pl-2 pr-1 py-0.5 rounded-full text-xs font-medium bg-transparent text-zinc-400 border border-zinc-700 font-mono gap-0.5">
+                Credits
+                <div className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">{item.courseCredit}</div>
               </div>
             </div>
 

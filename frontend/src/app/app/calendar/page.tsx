@@ -11,12 +11,12 @@ import { Button } from "@/app/components/ui/Button";
 
 const Page = () => {
   const { data, isPending } = useCalendar();
-  if (isPending) return <GlobalLoader className="h-10 w-10 text-white" />;
+  if (isPending) return <main className="w-full text-white flex items-center justify-center p-4 h-screen"><GlobalLoader /></main>;
   if (!data || data.length === 0)
     return (
-      <div className="flex h-full w-full justify-center items-center text-zinc-500">
+      <main className="flex h-screen w-full justify-center items-center text-zinc-500">
         No calendar data found
-      </div>
+      </main>
     );
   return <DayChange data={data} />;
 };
@@ -37,9 +37,9 @@ const DayChange = ({ data }: { data: Month[] }) => {
   // Guard against invalid data
   if (!data || data.length === 0 || !data[month]) {
     return (
-      <div className="flex h-full w-full justify-center items-center text-zinc-500">
+      <main className="flex h-screen w-full justify-center items-center text-zinc-500">
         No calendar data available
-      </div>
+      </main>
     );
   }
 

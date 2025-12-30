@@ -17,12 +17,12 @@ import { TotalMarksCard } from "@/app/components/TotalMarksCard";
 const Page = () => {
   const { data, isPending } = useMarks();
   const courses = useCourse().data;
-  if (isPending) return <GlobalLoader className="h-10 w-10 text-white" />;
+  if (isPending) return <main className="w-full text-white flex items-center justify-center p-4 h-screen"><GlobalLoader /></main>;
   if (!data || data.length === 0)
     return (
-      <div className="flex h-full w-full justify-center items-center">
+      <main className="flex h-screen w-full justify-center items-center">
         No data found
-      </div>
+      </main>
     );
 
   const totalObtained = data.reduce((acc, m) => acc + (m.total?.obtained || 0), 0);
@@ -56,7 +56,12 @@ const Page = () => {
   const formattedCgpa = formatNumber(cgpa, 2);
 
   return (
-    <main className="flex flex-col gap-6 py-6 pb-20 px-4 sm:px-6 w-full max-w-[1600px] mx-auto min-h-screen">
+    <main className="flex flex-col gap-4 pt-2 pb-24 px-4 sm:px-6 w-full max-w-[1600px] mx-auto min-h-screen">
+      <div className="flex justify-between items-end ml-2"> {/* Optional: z-10 ensures text stays clickable/sharp if blur overlaps too much */}
+        <div>
+          <h1 className="text-2xl text-white tracking-tight mb-2 font-space-grotesk">Marks</h1>
+        </div>
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="grid grid-cols-2 gap-4">
           <Card className="pt-4 p-4 text-center bg-zinc-900/20 border-zinc-800/50">
@@ -76,11 +81,11 @@ const Page = () => {
 
       <div className="space-y-6">
         <div>
-          <h2 className="text-lg font-medium text-white mb-4 pl-1">Theory Modules</h2>
+          <h2 className="text-xs font-bold text-vertex-text-grey uppercase tracking-wide mb-2">Theory</h2>
           <Data data={data} category="theory" />
         </div>
         <div>
-          <h2 className="text-lg font-medium text-white mb-4 pl-1">Practical Modules</h2>
+          <h2 className="text-xs font-bold text-vertex-text-grey uppercase tracking-wide mb-2">Practical</h2>
           <Data data={data} category="practical" />
         </div>
       </div>
@@ -206,10 +211,10 @@ const CourseItem = ({
         zIndex: isExpanded ? 50 : 0,
       }}
     >
-      <motion.div layout="position" className="p-4 flex flex-col gap-1">
+      <motion.div layout="position" className="flex flex-col">
 
         {/* Header */}
-        <div className="flex justify-between items-start gap-4">
+        <div className="flex justify-between items-start gap-4 px-4 pt-3">
           <h3 className="text-sm font-medium text-white/90 line-clamp-2 leading-relaxed h-10 w-[70%]">
             {courseList?.courseTitle}
           </h3>
@@ -217,14 +222,12 @@ const CourseItem = ({
             <span className="text-[10px] font-mono text-zinc-500 bg-zinc-800/50 px-1.5 py-0.5 rounded border border-zinc-800" title="Credits">
               {courseList?.courseCredit}C
             </span>
-            <span className="text-[10px] uppercase font-bold text-zinc-600 tracking-wider">
-              {courseList?.courseCode?.endsWith("P") ? "LAB" : "TH"}
-            </span>
           </div>
         </div>
+        <div className="h-[1px] w-full bg-zinc-800/50"></div>
 
         {/* Content */}
-        <div className="flex-1 flex flex-col justify-center py-2">
+        <div className="flex-1 flex flex-col justify-center py-2 px-4">
           {item.marks.length === 0 ? (
             <div className="text-red-400 text-center text-sm py-4 bg-red-500/5 rounded-lg border border-red-500/10">No Marks Data</div>
           ) : (
@@ -233,7 +236,7 @@ const CourseItem = ({
         </div>
 
         {/* Footer Stats */}
-        <div className="pt-3 border-t border-zinc-800/50 flex items-center justify-between">
+        <div className="pt-3 border-t border-zinc-800/50 flex items-center justify-between px-4 pb-1">
           <span className="text-xs text-zinc-500 font-mono">{courseList?.courseCode}</span>
           <div className="flex items-center gap-2">
             <span className="text-lg font-semibold text-white tracking-tight">{formatNumber(item.total?.obtained ?? 0)}</span>

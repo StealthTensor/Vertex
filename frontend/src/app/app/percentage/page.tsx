@@ -13,7 +13,7 @@ const PercentagePage = () => {
   const { data: marks, isPending } = useMarks();
   const { data: courses } = useCourse();
 
-  if (isPending) return <GlobalLoader className="h-10 w-10 text-white" />;
+  if (isPending) return <main className="w-full text-white flex items-center justify-center p-4 h-screen"><GlobalLoader /></main>;
   if (!marks || marks.length === 0)
     return (
       <div className="flex h-full w-full justify-center items-center text-zinc-500">

@@ -14,6 +14,7 @@ import {
   Bolt,
 } from "lucide-react";
 
+
 const BottomNav = () => {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -105,7 +106,7 @@ const BottomNav = () => {
       <div
         ref={dockRef}
         className={`glass-dock transition-all duration-300 ease-out overflow-hidden ${menuOpen ? "h-72 rounded-3xl" : "h-16 rounded-full"
-          }  flex flex-col justify-end items-center shadow-glow-emerald bg-zinc-950/40 backdrop-blur-xl border border-white/10 relative z-40 w-full`}
+          }  flex flex-col justify-end items-center shadow-2xl bg-[#08090A]/60 backdrop-blur-md border border-white/10 relative z-40 w-full`}
       >
         <div
           className={`absolute inset-x-3 bottom-[25px] transition-all duration-300 ease-out origin-bottom ${menuOpen

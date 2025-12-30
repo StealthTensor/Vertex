@@ -6,7 +6,7 @@ import { getGrade } from "@/types/gradex";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import GradeCard from "./GradeCard";
 import { determineGrade, gradePoints } from "@/utils/gpaCalculator";
-
+import ShinyText from "@/components/ShinyText";
 export default function GradeCalculator({
   marks,
   courses,
@@ -131,22 +131,44 @@ export default function GradeCalculator({
     <main className="h-screen w-full pb-0">
       <div className="flex flex-col gap-12">
         <section id="links" className="flex flex-col gap-6">
-          <h1 className="text-3xl font-semibold text-white">GradeX</h1>
+          <h1 className="text-2xl font-semibold text-white">GradeX</h1>
 
           <div className="flex flex-col gap-6 rounded-3xl border border-white/10 p-2 mb-[80px] lg:mb-2">
             {marks?.length ? (
               <>
                 <div className="w-full items-center justify-center lg:flex">
-                  <h2
-                    className={`rounded-2xl border px-8 py-4 text-center text-5xl font-semibold ${sgpa > 8.5
-                      ? "border-transparent bg-green-400/20 text-green-400"
-                      : sgpa < 6
-                        ? "border-dashed border-red-400 bg-red-400/20 text-red-400"
-                        : "border border-white/20 bg-white/5 text-white"
-                      }`}
-                  >
-                    {sgpa} <span className="text-base opacity-40">SGPA</span>
-                  </h2>
+                  {sgpa > 9.5 ? (
+                    <>
+                      <h2 className="rounded-2xl border px-8 py-4 text-center text-5xl font-semibold border-transparent bg-yellow-300/5 text-yellow-400">
+                        <ShinyText
+                          text={sgpa}
+                          speed={2}
+                          delay={0}
+                          color="#f0dc27ff"
+                          shineColor="#ffffff"
+                          spread={120}
+                          direction="left"
+                          yoyo={false}
+                          pauseOnHover={false}
+                        />
+                        <span className="text-base opacity-40 ml-1">  SGPA</span>
+                      </h2>
+
+                    </>
+                  ) : (
+                    <h2
+                      className={`rounded-2xl border px-8 py-4 text-center text-5xl font-semibold ${sgpa > 9.5
+                        ? "border-transparent bg-yellow-300/20 text-yellow-400"
+                        : sgpa <= 9.5 && sgpa >= 8.5
+                          ? "border-transparent bg-green-400/20 text-green-400"
+                          : sgpa < 6
+                            ? "border-dashed border-red-400 bg-red-400/20 text-red-400"
+                            : "border border-white/20 bg-white/5 text-white"
+                        }`}
+                    >
+                      {sgpa} <span className="text-base opacity-40">SGPA</span>
+                    </h2>
+                  )}
                 </div>
                 <div className="grid animate-fadeIn grid-cols-1 gap-2 transition-all duration-200 lg:grid-cols-2 xl:grid-cols-3">
                   {theory.map((mark, index) => (

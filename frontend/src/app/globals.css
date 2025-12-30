@@ -46,7 +46,7 @@
 
 /* GLOBAL STYLES */
 body {
-  background-color: rgb(9, 9, 11);
+  background-color: rgb(17, 17, 17);
   background-attachment: scroll;
   color: var(--vertex-white);
   min-height: 100vh;
@@ -96,7 +96,7 @@ h6 {
     /* Zinc-800 @ 50% */
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
   }
-  
+
   /* Generic Glass Utility used in Landing Page */
   .glass {
     background: rgba(24, 24, 27, 0.2);
@@ -155,18 +155,18 @@ h6 {
   .apply-border-md {
     @apply border border-white/5 rounded-xl;
   }
-  
+
   .apply-border-sm {
     @apply border border-white/5 rounded-lg;
   }
-  
+
   .background-rounded {
     @apply bg-zinc-900/50;
   }
-  
-  .apply-inner-shadow-sm {
-    @apply shadow-[inset_0_2px_4px_rgba(0,0,0,0.6)];
-  }
+
+  /* .apply-inner-shadow-sm {
+    @apply shadow-[inset_0_2px_4px_rgba(0, 0, 0, 0.6)];
+  } */
 }
 
 /* SCROLLBAR STYLING */
