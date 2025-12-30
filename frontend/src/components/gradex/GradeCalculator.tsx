@@ -141,7 +141,7 @@ export default function GradeCalculator({
                     <>
                       <h2 className="rounded-2xl border px-8 py-4 text-center text-5xl font-semibold border-transparent bg-yellow-300/5 text-yellow-400">
                         <ShinyText
-                          text={sgpa}
+                          text={sgpa.toString()}
                           speed={2}
                           delay={0}
                           color="#f0dc27ff"
